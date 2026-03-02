@@ -11,15 +11,12 @@ final class ProfileRegistry
     /**
      * @var array<string, ProfileInterface>
      */
-    private array $profiles;
+    private array $profiles = [];
 
-    public function __construct()
+    public function register(ProfileInterface $profile): void
     {
-        $dialer = new Dialer24x7Profile();
-
-        $this->profiles = [
-            $dialer->name() => $dialer,
-        ];
+        $this->profiles[$profile->name()] = $profile;
+        ksort($this->profiles, SORT_STRING);
     }
 
     public function get(string $name): ProfileInterface

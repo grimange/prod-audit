@@ -6,33 +6,26 @@ namespace ProdAudit\Audit;
 
 use ProdAudit\Audit\Profiles\ProfileInterface;
 use ProdAudit\Audit\Rules\RuleInterface;
+use ProdAudit\Audit\Rules\RuleRegistry;
 
 final class RuleScheduler
 {
-    /**
-     * @var array<string, RuleInterface>
-     */
-    private array $rules = [];
-
-    /**
-     * @param array<int, RuleInterface> $rules
-     */
-    public function __construct(array $rules = [])
+    public function __construct(
+        private readonly RuleRegistry $ruleRegistry
+    )
     {
-        foreach ($rules as $rule) {
-            $this->rules[$rule->metadata()->id] = $rule;
-        }
     }
 
     /**
      * @return array<int, RuleInterface>
-     */
+    */
     public function schedule(ProfileInterface $profile): array
     {
         $scheduled = [];
         foreach ($profile->ruleIds() as $ruleId) {
-            if (isset($this->rules[$ruleId])) {
-                $scheduled[] = $this->rules[$ruleId];
+            $rule = $this->ruleRegistry->get($ruleId);
+            if ($rule instanceof RuleInterface) {
+                $scheduled[] = $rule;
             }
         }
 

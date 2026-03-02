@@ -6,7 +6,9 @@ namespace ProdAudit\Console\Commands;
 
 use ProdAudit\Audit\AuditRunner;
 use ProdAudit\Audit\Baseline\BaselineRepository;
+use ProdAudit\Audit\Plugins\PluginLoader;
 use ProdAudit\Audit\Profiles\ProfileRegistry;
+use ProdAudit\Audit\Rules\RuleRegistry;
 use ProdAudit\Audit\Suppression\SuppressionRepository;
 use ProdAudit\Utils\PathNormalizer;
 use Symfony\Component\Console\Command\Command;
@@ -23,6 +25,8 @@ final class ScanCommand extends Command
         private readonly ProfileRegistry $profileRegistry,
         private readonly BaselineRepository $baselineRepository,
         private readonly SuppressionRepository $suppressionRepository,
+        private readonly PluginLoader $pluginLoader,
+        private readonly RuleRegistry $ruleRegistry,
     ) {
         parent::__construct();
     }
@@ -46,6 +50,7 @@ final class ScanCommand extends Command
             $scanPath = PathNormalizer::normalize((string) $input->getArgument('path'));
             $outputDirectory = PathNormalizer::normalize((string) $input->getOption('out'));
             $profileName = (string) $input->getOption('profile');
+            $this->pluginLoader->load($scanPath, $this->profileRegistry, $this->ruleRegistry);
 
             if (!is_dir($outputDirectory) && !mkdir($outputDirectory, 0777, true) && !is_dir($outputDirectory)) {
                 throw new \RuntimeException('Unable to create output directory.');
@@ -88,6 +93,11 @@ final class ScanCommand extends Command
             $output->writeln(sprintf('Suppressed: %d', $report['summary']['suppressed_findings']));
             $output->writeln(sprintf('Baseline: %d', $report['summary']['baseline_findings']));
             $output->writeln(sprintf('Regression: %s', ($report['regression'] ?? false) === true ? 'yes' : 'no'));
+            $output->writeln(sprintf(
+                'AST parsed: %d ok / %d failed',
+                (int) ($report['collector_stats']['ast']['ok'] ?? 0),
+                (int) ($report['collector_stats']['ast']['failed'] ?? 0)
+            ));
             $output->writeln(sprintf('Report: %s/latest.md', $outputDirectory));
 
             if ((int) $report['invariant_failures'] > 0) {

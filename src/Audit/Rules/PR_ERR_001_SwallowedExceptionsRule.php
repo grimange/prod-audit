@@ -8,6 +8,13 @@ use ProdAudit\Utils\Fingerprint;
 
 final class PR_ERR_001_SwallowedExceptionsRule implements RuleInterface
 {
+    private readonly EvidenceFactory $evidenceFactory;
+
+    public function __construct(?EvidenceFactory $evidenceFactory = null)
+    {
+        $this->evidenceFactory = $evidenceFactory ?? new EvidenceFactory();
+    }
+
     public function metadata(): RuleMetadata
     {
         return new RuleMetadata(
@@ -20,88 +27,119 @@ final class PR_ERR_001_SwallowedExceptionsRule implements RuleInterface
 
     public function evaluate(array $collectorData): RuleResult
     {
-        $matches = $collectorData['patterns']['exceptions'] ?? [];
-        if (!is_array($matches)) {
-            return new RuleResult($this->metadata(), []);
-        }
-
         $findings = [];
         $index = 1;
-        foreach ($matches as $match) {
-            if (!is_array($match)) {
+        $ast = $collectorData['ast'] ?? [];
+        $catchBlocks = is_array($ast['catch_blocks'] ?? null) ? $ast['catch_blocks'] : [];
+        foreach ($catchBlocks as $catchBlock) {
+            if (!is_array($catchBlock)) {
                 continue;
             }
 
-            $excerpt = (string) ($match['excerpt'] ?? '');
-            if ($excerpt === '' || !$this->isSwallowedCatch($excerpt)) {
+            $isEmpty = (bool) ($catchBlock['is_empty'] ?? false);
+            $onlyControlFlow = (bool) ($catchBlock['only_control_flow'] ?? false);
+            $hasRethrow = (bool) ($catchBlock['has_rethrow'] ?? false);
+            $hasObservabilityCall = (bool) ($catchBlock['has_observability_call'] ?? false);
+
+            if ((!$isEmpty && !$onlyControlFlow) || $hasRethrow || $hasObservabilityCall) {
                 continue;
             }
 
-            $file = (string) ($match['file'] ?? '');
-            $line = (int) ($match['line'] ?? 0);
-            $line = $line > 0 ? $line : 1;
-
-            $evidence = Evidence::create(
-                type: 'file_snippet',
-                file: $file,
-                lineStart: $line,
-                lineEnd: $line + substr_count($excerpt, "\n"),
-                excerpt: $this->trimToMaxLines($excerpt, 10),
+            $evidence = $this->evidenceFactory->fromLocation(
+                type: 'ast_node',
+                file: (string) ($catchBlock['file'] ?? ''),
+                startLine: (int) ($catchBlock['start_line'] ?? 1),
+                endLine: (int) ($catchBlock['end_line'] ?? 1),
+                excerpt: (string) ($catchBlock['snippet'] ?? '')
             );
 
-            $fingerprint = Fingerprint::fromEvidence('PR-ERR-001', [$evidence]);
-            $findings[] = new Finding(
-                id: sprintf('PR-ERR-001-%03d', $index),
-                ruleId: 'PR-ERR-001',
-                title: 'Swallowed Exceptions',
-                category: 'reliability',
-                severity: Severity::Major,
-                confidence: Confidence::High,
-                message: 'Exception caught but not handled or escalated',
-                impact: 'Silent failures may hide production errors.',
-                recommendation: 'Log or rethrow exceptions.',
-                effort: 'small',
-                tags: ['exceptions', 'error-handling'],
-                evidence: [$evidence],
-                fingerprint: $fingerprint,
-            );
+            $findings[] = $this->newFinding($index, $evidence, Confidence::High);
             ++$index;
+        }
+
+        $parsedOkFiles = $this->parsedOkFiles($ast['files'] ?? []);
+        $matches = $collectorData['patterns']['exceptions'] ?? [];
+        if (is_array($matches)) {
+            foreach ($matches as $match) {
+                if (!is_array($match)) {
+                    continue;
+                }
+
+                $file = (string) ($match['file'] ?? '');
+                if (isset($parsedOkFiles[$file])) {
+                    continue;
+                }
+
+                $excerpt = (string) ($match['excerpt'] ?? '');
+                if ($excerpt === '' || !$this->looksLikeSwallowedCatch($excerpt)) {
+                    continue;
+                }
+
+                $line = (int) ($match['line'] ?? 1);
+                $line = $line > 0 ? $line : 1;
+                $evidence = $this->evidenceFactory->fromLocation(
+                    type: 'file_snippet',
+                    file: $file,
+                    startLine: $line,
+                    endLine: $line + substr_count($excerpt, "\n"),
+                    excerpt: $excerpt
+                );
+
+                $findings[] = $this->newFinding($index, $evidence, Confidence::Medium);
+                ++$index;
+            }
         }
 
         return new RuleResult($this->metadata(), $findings);
     }
 
-    private function isSwallowedCatch(string $excerpt): bool
+    /**
+     * @param array<string, mixed> $files
+     * @return array<string, true>
+     */
+    private function parsedOkFiles(array $files): array
     {
-        if (!preg_match('/catch\s*\([^)]+\)\s*\{(?P<body>[\s\S]*?)\}\s*$/i', $excerpt, $matches)) {
-            return false;
+        $result = [];
+        foreach ($files as $file => $status) {
+            if (!is_array($status)) {
+                continue;
+            }
+
+            if (($status['status'] ?? 'error') === 'ok') {
+                $result[(string) $file] = true;
+            }
         }
 
-        $body = trim((string) ($matches['body'] ?? ''));
-        if ($body === '') {
-            return true;
-        }
-
-        if (preg_match('/^(return|break|continue)\s*;\s*$/i', $body) === 1) {
-            return true;
-        }
-
-        if (preg_match('/\bthrow\b/i', $body) === 1) {
-            return false;
-        }
-
-        if (preg_match('/\blogger\s*\(|\blog\s*\(/i', $body) === 1) {
-            return false;
-        }
-
-        return false;
+        return $result;
     }
 
-    private function trimToMaxLines(string $excerpt, int $maxLines): string
+    private function looksLikeSwallowedCatch(string $excerpt): bool
     {
-        $lines = preg_split('/\R/', $excerpt) ?: [];
-        $lines = array_slice($lines, 0, $maxLines);
+        if (preg_match('/catch\s*\([^)]+\)\s*\{\s*\}\s*$/i', $excerpt) === 1) {
+            return true;
+        }
 
-        return implode("\n", $lines);
+        return preg_match('/catch\s*\([^)]+\)\s*\{\s*(?:return|break|continue)\s*;\s*\}\s*$/i', $excerpt) === 1;
+    }
+
+    private function newFinding(int $index, Evidence $evidence, Confidence $confidence): Finding
+    {
+        $fingerprint = Fingerprint::fromEvidence('PR-ERR-001', [$evidence]);
+
+        return new Finding(
+            id: sprintf('PR-ERR-001-%03d', $index),
+            ruleId: 'PR-ERR-001',
+            title: 'Swallowed Exceptions',
+            category: 'reliability',
+            severity: Severity::Major,
+            confidence: $confidence,
+            message: 'Exception caught but not handled or escalated',
+            impact: 'Silent failures may hide production errors.',
+            recommendation: 'Log or rethrow exceptions.',
+            effort: 'small',
+            tags: ['exceptions', 'error-handling'],
+            evidence: [$evidence],
+            fingerprint: $fingerprint,
+        );
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ProdAudit\Audit;
 
 use ProdAudit\Audit\Collectors\ComposerCollector;
+use ProdAudit\Audit\Collectors\AstCollector;
 use ProdAudit\Audit\Collectors\FileCollector;
 use ProdAudit\Audit\Collectors\PatternCollector;
 use ProdAudit\Audit\Collectors\PhpConfigCollector;
@@ -24,6 +25,7 @@ final class AuditRunner
         private readonly RuleScheduler $ruleScheduler,
         private readonly FindingAggregator $findingAggregator,
         private readonly FileCollector $fileCollector,
+        private readonly AstCollector $astCollector,
         private readonly PatternCollector $patternCollector,
         private readonly ComposerCollector $composerCollector,
         private readonly PhpConfigCollector $phpConfigCollector,
@@ -52,7 +54,8 @@ final class AuditRunner
         array $suppressionEntries = [],
         bool $writeHistory = true
     ): array {
-        $findings = $this->collectFindings($scanPath, $profile);
+        $collectorData = $this->collectCollectorData($scanPath);
+        $findings = $this->evaluateRules($collectorData, $profile);
         $filtered = $this->findingFilter->filter($findings, $baselineEntries, $suppressionEntries);
 
         /** @var array<int, Finding> $activeFindings */
@@ -87,6 +90,9 @@ final class AuditRunner
                 'suppressed_findings' => count($filtered['suppressed']),
                 'baseline_findings' => count($filtered['baseline']),
             ],
+            'collector_stats' => [
+                'ast' => $collectorData['ast']['summary'] ?? ['ok' => 0, 'failed' => 0],
+            ],
         ];
 
         $historyPath = rtrim($outputDirectory, '/') . '/history.jsonl';
@@ -110,11 +116,15 @@ final class AuditRunner
      */
     public function collectFindings(string $scanPath, ProfileInterface $profile): array
     {
-        $collectorData = [];
-        $collectorData['files'] = $this->fileCollector->collect($scanPath);
-        $collectorData['patterns'] = $this->patternCollector->collect($collectorData['files']);
-        $collectorData['composer'] = $this->composerCollector->collect($scanPath);
-        $collectorData['php_config'] = $this->phpConfigCollector->collect();
+        return $this->evaluateRules($this->collectCollectorData($scanPath), $profile);
+    }
+
+    /**
+     * @param array<string, mixed> $collectorData
+     * @return array<int, Finding>
+     */
+    private function evaluateRules(array $collectorData, ProfileInterface $profile): array
+    {
 
         $rules = $this->ruleScheduler->schedule($profile);
 
@@ -124,6 +134,21 @@ final class AuditRunner
         }
 
         return $this->findingAggregator->aggregate($ruleResults);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function collectCollectorData(string $scanPath): array
+    {
+        $collectorData = [];
+        $collectorData['files'] = $this->fileCollector->collect($scanPath);
+        $collectorData['ast'] = $this->astCollector->collect($collectorData['files'], $this->fileCollector);
+        $collectorData['patterns'] = $this->patternCollector->collect($collectorData['files']);
+        $collectorData['composer'] = $this->composerCollector->collect($scanPath);
+        $collectorData['php_config'] = $this->phpConfigCollector->collect();
+
+        return $collectorData;
     }
 
     /**
