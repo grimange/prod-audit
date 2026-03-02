@@ -1,0 +1,197 @@
+{
+    "timestamp": "20260302-123106",
+    "profile": "dialer-24x7",
+    "path": "tests/Fixtures",
+    "target_score": 95,
+    "score": 100,
+    "band": "Production Ready",
+    "invariant_failures": 0,
+    "invariants": {
+        "failures": 0
+    },
+    "breakdown": {
+        "starting_score": 100,
+        "penalties": [],
+        "caps_applied": [],
+        "final_score": 100
+    },
+    "findings": [],
+    "suppressed": [],
+    "baseline": [
+        {
+            "finding": {
+                "id": "PR-HANG-001-001",
+                "rule_id": "PR-HANG-001",
+                "title": "Infinite Loop Without Yield",
+                "category": "reliability",
+                "severity": "critical",
+                "confidence": "medium",
+                "message": "Infinite loop without yield or timeout.",
+                "impact": "May cause CPU starvation or uninterruptible hangs.",
+                "recommendation": "Add sleep/yield or timeout checks.",
+                "effort": "small",
+                "tags": [
+                    "invariant",
+                    "loop",
+                    "availability"
+                ],
+                "evidence": [
+                    {
+                        "type": "file_snippet",
+                        "file": "bad_loops.php",
+                        "line_start": 3,
+                        "line_end": 3,
+                        "excerpt": "while (true) {",
+                        "hash": "729eaa79794c50c3c0f9db2b61180c6665360604d4bd79e79acb7f22f63d6628"
+                    }
+                ],
+                "fingerprint": "115d7e7227fe02e202d275bfab8e65bec04c22dbd2190b84859a4b6a536bac9d",
+                "advisory_only": false,
+                "invariant_failure": true
+            },
+            "entry": {
+                "fingerprint": "115d7e7227fe02e202d275bfab8e65bec04c22dbd2190b84859a4b6a536bac9d",
+                "rule": "PR-HANG-001",
+                "justification": "",
+                "expires": null
+            }
+        },
+        {
+            "finding": {
+                "id": "PR-ERR-001-002",
+                "rule_id": "PR-ERR-001",
+                "title": "Swallowed Exceptions",
+                "category": "reliability",
+                "severity": "major",
+                "confidence": "high",
+                "message": "Exception caught but not handled or escalated",
+                "impact": "Silent failures may hide production errors.",
+                "recommendation": "Log or rethrow exceptions.",
+                "effort": "small",
+                "tags": [
+                    "exceptions",
+                    "error-handling"
+                ],
+                "evidence": [
+                    {
+                        "type": "file_snippet",
+                        "file": "bad_exceptions.php",
+                        "line_start": 9,
+                        "line_end": 9,
+                        "excerpt": "catch (Exception $e) { return; }",
+                        "hash": "a088fc0cf07139b8b69e32f244aceb7e595e4372858bc108dca700778b29a612"
+                    }
+                ],
+                "fingerprint": "3ff3ca7fe5f45c2d635bbcbb1684986ddccd01ad20ba2ec0d2918eb78fa7db78",
+                "advisory_only": false,
+                "invariant_failure": false
+            },
+            "entry": {
+                "fingerprint": "3ff3ca7fe5f45c2d635bbcbb1684986ddccd01ad20ba2ec0d2918eb78fa7db78",
+                "rule": "PR-ERR-001",
+                "justification": "",
+                "expires": null
+            }
+        },
+        {
+            "finding": {
+                "id": "PR-LOCK-001-001",
+                "rule_id": "PR-LOCK-001",
+                "title": "Lock Renew Atomicity Heuristic",
+                "category": "reliability",
+                "severity": "critical",
+                "confidence": "low",
+                "message": "Lock renew may not be owner-scoped or atomic.",
+                "impact": "Split-brain risk possible.",
+                "recommendation": "Use owner-scoped atomic renew (Lua script).",
+                "effort": "medium",
+                "tags": [
+                    "invariant",
+                    "locking",
+                    "redis"
+                ],
+                "evidence": [
+                    {
+                        "type": "file_snippet",
+                        "file": "bad_lock.php",
+                        "line_start": 3,
+                        "line_end": 3,
+                        "excerpt": "$redis->expire($key, 10);",
+                        "hash": "f4eeb87f3c80cb00f3e1f331f57fea89708b1499418dd9da06114b3a70a8a958"
+                    }
+                ],
+                "fingerprint": "72df8797b855e541674a45eec67acbe16c34b3781193ffbe2aef28cf1a08dd00",
+                "advisory_only": false,
+                "invariant_failure": true
+            },
+            "entry": {
+                "fingerprint": "72df8797b855e541674a45eec67acbe16c34b3781193ffbe2aef28cf1a08dd00",
+                "rule": "PR-LOCK-001",
+                "justification": "",
+                "expires": null
+            }
+        },
+        {
+            "finding": {
+                "id": "PR-ERR-001-001",
+                "rule_id": "PR-ERR-001",
+                "title": "Swallowed Exceptions",
+                "category": "reliability",
+                "severity": "major",
+                "confidence": "high",
+                "message": "Exception caught but not handled or escalated",
+                "impact": "Silent failures may hide production errors.",
+                "recommendation": "Log or rethrow exceptions.",
+                "effort": "small",
+                "tags": [
+                    "exceptions",
+                    "error-handling"
+                ],
+                "evidence": [
+                    {
+                        "type": "file_snippet",
+                        "file": "bad_exceptions.php",
+                        "line_start": 5,
+                        "line_end": 5,
+                        "excerpt": "catch (Throwable $e) {}",
+                        "hash": "52e503ad9316f82610e25c85b0b65b9277dbf592be3e6124afe47a3019ec01e7"
+                    }
+                ],
+                "fingerprint": "f680c57c9c2d272e24b8ffd8889c5c69be0d91bd1c7f21067119e118cac01446",
+                "advisory_only": false,
+                "invariant_failure": false
+            },
+            "entry": {
+                "fingerprint": "f680c57c9c2d272e24b8ffd8889c5c69be0d91bd1c7f21067119e118cac01446",
+                "rule": "PR-ERR-001",
+                "justification": "",
+                "expires": null
+            }
+        }
+    ],
+    "summary": {
+        "total_findings": 0,
+        "suppressed_findings": 0,
+        "baseline_findings": 4
+    },
+    "trend": {
+        "previous_score": 70,
+        "current_score": 100,
+        "score_delta": 30,
+        "new_findings": 0,
+        "resolved_findings": 4,
+        "new_fingerprints": [],
+        "resolved_fingerprints": [
+            "115d7e7227fe02e202d275bfab8e65bec04c22dbd2190b84859a4b6a536bac9d",
+            "3ff3ca7fe5f45c2d635bbcbb1684986ddccd01ad20ba2ec0d2918eb78fa7db78",
+            "72df8797b855e541674a45eec67acbe16c34b3781193ffbe2aef28cf1a08dd00",
+            "f680c57c9c2d272e24b8ffd8889c5c69be0d91bd1c7f21067119e118cac01446"
+        ],
+        "repeated_fingerprints": [],
+        "regression": false,
+        "regression_reasons": [],
+        "stagnation_detected": false,
+        "window_size": 3
+    },
+    "regression": false
+}

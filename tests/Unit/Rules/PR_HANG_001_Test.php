@@ -1,0 +1,52 @@
+<?php
+
+declare(strict_types=1);
+
+namespace ProdAudit\Tests\Unit\Rules;
+
+use PHPUnit\Framework\TestCase;
+use ProdAudit\Audit\Collectors\PatternCollector;
+use ProdAudit\Audit\Rules\PR_HANG_001_InfiniteLoopRule;
+
+final class PR_HANG_001_Test extends TestCase
+{
+    public function testBadFixtureProducesFindings(): void
+    {
+        $rule = new PR_HANG_001_InfiniteLoopRule();
+        $result = $rule->evaluate($this->collectorDataForFixture('bad_loops.php'));
+
+        self::assertNotEmpty($result->findings);
+        self::assertTrue($result->findings[0]->invariantFailure);
+    }
+
+    public function testGoodFixtureProducesNoFindings(): void
+    {
+        $rule = new PR_HANG_001_InfiniteLoopRule();
+        $result = $rule->evaluate($this->collectorDataForFixture('good_loops.php'));
+
+        self::assertCount(0, $result->findings);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function collectorDataForFixture(string $fixtureName): array
+    {
+        $path = $this->fixturePath($fixtureName);
+        $files = [[
+            'path' => $path,
+            'relative_path' => $fixtureName,
+            'extension' => 'php',
+            'size' => filesize($path) ?: 0,
+        ]];
+
+        return [
+            'patterns' => (new PatternCollector())->collect($files),
+        ];
+    }
+
+    private function fixturePath(string $fixtureName): string
+    {
+        return dirname(__DIR__, 2) . '/Fixtures/' . $fixtureName;
+    }
+}

@@ -1,0 +1,31 @@
+{
+    "profile": "dialer-24x7",
+    "created_at": "2026-03-02T12:31:06+00:00",
+    "target_score": 95,
+    "accepted_findings": [
+        {
+            "fingerprint": "115d7e7227fe02e202d275bfab8e65bec04c22dbd2190b84859a4b6a536bac9d",
+            "rule": "PR-HANG-001",
+            "justification": "",
+            "expires": null
+        },
+        {
+            "fingerprint": "3ff3ca7fe5f45c2d635bbcbb1684986ddccd01ad20ba2ec0d2918eb78fa7db78",
+            "rule": "PR-ERR-001",
+            "justification": "",
+            "expires": null
+        },
+        {
+            "fingerprint": "72df8797b855e541674a45eec67acbe16c34b3781193ffbe2aef28cf1a08dd00",
+            "rule": "PR-LOCK-001",
+            "justification": "",
+            "expires": null
+        },
+        {
+            "fingerprint": "f680c57c9c2d272e24b8ffd8889c5c69be0d91bd1c7f21067119e118cac01446",
+            "rule": "PR-ERR-001",
+            "justification": "",
+            "expires": null
+        }
+    ]
+}

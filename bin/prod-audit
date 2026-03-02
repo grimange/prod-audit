@@ -1,0 +1,29 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+use ProdAudit\Console\Application;
+
+$autoloadCandidates = [
+    __DIR__ . '/../vendor/autoload.php',
+    __DIR__ . '/../autoload.php',
+];
+
+$autoloadFile = null;
+foreach ($autoloadCandidates as $candidate) {
+    if (is_file($candidate)) {
+        $autoloadFile = $candidate;
+        break;
+    }
+}
+
+if ($autoloadFile === null) {
+    fwrite(STDERR, "Unable to locate Composer autoload file.\n");
+    exit(4);
+}
+
+require $autoloadFile;
+
+$application = new Application();
+$application->run();

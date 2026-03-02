@@ -1,0 +1,36 @@
+{
+  "name": "prod-audit/prod-audit",
+  "description": "Production readiness audit framework for PHP systems.",
+  "type": "library",
+  "license": "proprietary",
+  "require": {
+    "php": "^8.2",
+    "symfony/console": "^7.0",
+    "symfony/finder": "^7.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^11.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "ProdAudit\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "ProdAudit\\Tests\\": "tests/"
+    }
+  },
+  "bin": [
+    "bin/prod-audit"
+  ],
+  "scripts": {
+    "test": "vendor/bin/phpunit",
+    "post-install-cmd": [
+      "@php -r \"if (!is_dir('vendor/bin')) { mkdir('vendor/bin', 0777, true); } copy('bin/prod-audit', 'vendor/bin/prod-audit'); chmod('vendor/bin/prod-audit', 0755);\""
+    ],
+    "post-update-cmd": [
+      "@php -r \"if (!is_dir('vendor/bin')) { mkdir('vendor/bin', 0777, true); } copy('bin/prod-audit', 'vendor/bin/prod-audit'); chmod('vendor/bin/prod-audit', 0755);\""
+    ]
+  }
+}
