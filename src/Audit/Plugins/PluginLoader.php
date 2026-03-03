@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ProdAudit\Audit\Plugins;
 
 use ProdAudit\Audit\Profiles\ProfileRegistry;
+use ProdAudit\Audit\Rules\PackRegistry;
 use ProdAudit\Audit\Rules\RuleRegistry;
 
 final class PluginLoader
@@ -12,7 +13,7 @@ final class PluginLoader
     /**
      * @return array{loaded: array<int, string>, failed: array<int, string>}
      */
-    public function load(string $targetPath, ProfileRegistry $profiles, RuleRegistry $rules): array
+    public function load(string $targetPath, ProfileRegistry $profiles, RuleRegistry $rules, PackRegistry $packs): array
     {
         $loaded = [];
         $failed = [];
@@ -34,7 +35,7 @@ final class PluginLoader
                 continue;
             }
 
-            $plugin->register($profiles, $rules);
+            $plugin->register($profiles, $rules, $packs);
             $loaded[] = $plugin->getName();
         }
 

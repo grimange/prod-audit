@@ -13,6 +13,10 @@ final class FileCollector
      * @var array<string, string>
      */
     private array $contentCache = [];
+    /**
+     * @var array<string, array<int, array{path: string, relative_path: string, extension: string, size: int}>>
+     */
+    private array $indexCache = [];
 
     /**
      * @param array<int, string> $ignoredDirectories
@@ -21,16 +25,21 @@ final class FileCollector
     public function collect(
         string $path,
         int $maxFileSizeBytes = 2097152,
-        array $ignoredDirectories = ['vendor', 'docs']
+        array $ignoredDirectories = ['vendor', 'node_modules', 'storage', 'var', 'build']
     ): array
     {
         $normalized = PathNormalizer::normalize($path);
+        $cacheKey = $normalized . '|' . $maxFileSizeBytes . '|' . implode(',', $ignoredDirectories);
+        if (isset($this->indexCache[$cacheKey])) {
+            return $this->indexCache[$cacheKey];
+        }
 
         $finder = new Finder();
         $finder->files()->in($normalized)->sortByName()->size('<=' . $maxFileSizeBytes);
         if ($ignoredDirectories !== []) {
             $finder->exclude($ignoredDirectories);
         }
+        $finder->notPath('#^docs/audit/#');
 
         $files = [];
         foreach ($finder as $file) {
@@ -41,6 +50,8 @@ final class FileCollector
                 'size' => $file->getSize(),
             ];
         }
+
+        $this->indexCache[$cacheKey] = $files;
 
         return $files;
     }

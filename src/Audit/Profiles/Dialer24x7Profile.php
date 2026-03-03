@@ -16,13 +16,20 @@ final class Dialer24x7Profile implements ProfileInterface
         return 95;
     }
 
-    public function ruleIds(): array
+    public function packNames(): array
     {
         return [
-            'PR-ERR-001',
-            'PR-HANG-001',
-            'PR-LOCK-001',
+            'bounds',
+            'error-handling',
+            'reliability',
+            'timeout',
+            'observability',
         ];
+    }
+
+    public function ruleIds(): array
+    {
+        return [];
     }
 
     public function invariantRuleIds(): array

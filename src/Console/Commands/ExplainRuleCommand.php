@@ -7,6 +7,7 @@ namespace ProdAudit\Console\Commands;
 use InvalidArgumentException;
 use ProdAudit\Audit\Plugins\PluginLoader;
 use ProdAudit\Audit\Profiles\ProfileRegistry;
+use ProdAudit\Audit\Rules\PackRegistry;
 use ProdAudit\Audit\Rules\RuleRegistry;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -20,6 +21,7 @@ final class ExplainRuleCommand extends Command
         private readonly RuleRegistry $ruleRegistry,
         private readonly PluginLoader $pluginLoader,
         private readonly ProfileRegistry $profileRegistry,
+        private readonly PackRegistry $packRegistry,
     ) {
         parent::__construct();
     }
@@ -35,7 +37,7 @@ final class ExplainRuleCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         try {
-            $this->pluginLoader->load(getcwd() ?: '.', $this->profileRegistry, $this->ruleRegistry);
+            $this->pluginLoader->load(getcwd() ?: '.', $this->profileRegistry, $this->ruleRegistry, $this->packRegistry);
             $ruleId = strtoupper(trim((string) $input->getArgument('rule-id')));
             $rule = $this->ruleRegistry->get($ruleId);
             if ($rule === null) {
@@ -59,6 +61,8 @@ final class ExplainRuleCommand extends Command
             $docPath = 'docs/rules/' . $metadata->id . '.md';
             if (is_file($docPath)) {
                 $output->writeln(sprintf('Documentation: %s', $docPath));
+            } else {
+                $output->writeln(sprintf('<comment>Documentation missing: %s</comment>', $docPath));
             }
 
             return 0;
@@ -87,6 +91,16 @@ final class ExplainRuleCommand extends Command
                 'medium when AST confirms expire-like call without eval/evalsha Lua scope',
                 'low when regex fallback triggers heuristic risk',
             ],
+            'PR-TIME-001' => [
+                'medium when AST confirms timeout option is missing in call scope',
+                'low when heuristic call pattern lacks explicit timeout options',
+            ],
+            'PR-BOUND-002' => [
+                'medium when AST confirms array growth inside infinite loop without bounds/reset',
+            ],
+            'PR-OBS-001' => [
+                'medium when logger call has message-only signature without context payload',
+            ],
             default => ['rule-specific confidence model unavailable'],
         };
     }
@@ -97,7 +111,7 @@ final class ExplainRuleCommand extends Command
     private function evidenceTypes(string $ruleId): array
     {
         return match ($ruleId) {
-            'PR-ERR-001', 'PR-HANG-001', 'PR-LOCK-001' => [
+            'PR-ERR-001', 'PR-HANG-001', 'PR-LOCK-001', 'PR-TIME-001', 'PR-BOUND-002', 'PR-OBS-001' => [
                 'ast_node (line range + snippet)',
                 'file_snippet (regex fallback)',
             ],

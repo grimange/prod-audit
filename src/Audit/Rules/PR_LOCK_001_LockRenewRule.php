@@ -20,8 +20,12 @@ final class PR_LOCK_001_LockRenewRule implements InvariantRuleInterface
         return new RuleMetadata(
             id: 'PR-LOCK-001',
             title: 'Lock Renew Atomicity Heuristic',
-            description: 'Detects lock renew calls without owner/token or Lua/eval atomicity hints.',
             invariant: true,
+            category: Category::LOCKING->value,
+            pack: 'reliability',
+            defaultSeverity: Severity::Critical,
+            description: 'Detects lock renew calls without owner/token or Lua/eval atomicity hints.',
+            whyItMatters: 'Non-atomic lock renew can cause duplicate workers and split-brain behavior.',
         );
     }
 
@@ -168,7 +172,7 @@ final class PR_LOCK_001_LockRenewRule implements InvariantRuleInterface
             id: sprintf('PR-LOCK-001-%03d', $index),
             ruleId: 'PR-LOCK-001',
             title: 'Lock Renew Atomicity Heuristic',
-            category: 'reliability',
+            category: Category::LOCKING->value,
             severity: Severity::Critical,
             confidence: $confidence,
             message: 'Lock renew may not be owner-scoped or atomic.',

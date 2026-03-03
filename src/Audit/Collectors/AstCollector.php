@@ -15,6 +15,11 @@ use PhpParser\ParserFactory;
 final class AstCollector
 {
     /**
+     * @var array<string, array<int, Node>|null>
+     */
+    private array $parseCache = [];
+
+    /**
      * @param array<int, array{path: string, relative_path: string, extension: string, size: int}> $files
      * @return array{
      *     summary: array{ok: int, failed: int},
@@ -60,7 +65,7 @@ final class AstCollector
             }
 
             try {
-                $ast = $parser->parse($content);
+                $ast = $this->parseWithCache($parser, $path, $content);
             } catch (Error $error) {
                 $fileStatuses[$relativePath] = [
                     'status' => 'error',
@@ -195,14 +200,16 @@ final class AstCollector
                         'end_line' => $this->line($node, false),
                         'has_sleep' => $loopSignals['has_sleep'],
                         'has_yield' => $loopSignals['has_yield'],
-                        'has_timeout_check' => $loopSignals['has_timeout_check'],
-                        'has_budget_decrement' => $loopSignals['has_budget_decrement'],
-                        'has_heartbeat_call' => $loopSignals['has_heartbeat_call'],
-                        'body_inspected' => true,
-                        'snippet' => $fileCollector->snippet($path, $this->line($node, true), $this->line($node, false)),
-                    ];
-                }
+                    'has_timeout_check' => $loopSignals['has_timeout_check'],
+                    'has_budget_decrement' => $loopSignals['has_budget_decrement'],
+                    'has_heartbeat_call' => $loopSignals['has_heartbeat_call'],
+                    'has_array_growth' => $loopSignals['has_array_growth'],
+                    'has_reset_or_bound' => $loopSignals['has_reset_or_bound'],
+                    'body_inspected' => true,
+                    'snippet' => $fileCollector->snippet($path, $this->line($node, true), $this->line($node, false)),
+                ];
             }
+        }
 
             if ($node instanceof Expr\MethodCall || $node instanceof Expr\StaticCall || $node instanceof Expr\FuncCall) {
                 $callData = [
@@ -211,6 +218,12 @@ final class AstCollector
                     'start_line' => $this->line($node, true),
                     'end_line' => $this->line($node, false),
                     'has_lua_arg' => $this->hasLuaArgument($node),
+                    'arg_count' => count($node->args),
+                    'has_timeout_option' => $this->hasArrayOptionKey($node, ['timeout']),
+                    'has_connect_timeout_option' => $this->hasArrayOptionKey($node, ['connect_timeout']),
+                    'is_curl_timeout_setter' => $this->isCurlTimeoutSetter($node),
+                    'has_context_array' => $this->hasSecondArrayArg($node),
+                    'snippet' => $fileCollector->snippet($path, $this->line($node, true), $this->line($node, false)),
                 ];
 
                 $scopeIndex = $this->findScopeIndexByRef($scopes, $scopeRef, $relativePath);
@@ -355,7 +368,15 @@ final class AstCollector
 
     /**
      * @param array<int, Stmt> $stmts
-     * @return array{has_sleep: bool, has_yield: bool, has_timeout_check: bool, has_budget_decrement: bool, has_heartbeat_call: bool}
+     * @return array{
+     *     has_sleep: bool,
+     *     has_yield: bool,
+     *     has_timeout_check: bool,
+     *     has_budget_decrement: bool,
+     *     has_heartbeat_call: bool,
+     *     has_array_growth: bool,
+     *     has_reset_or_bound: bool
+     * }
      */
     private function loopSignals(array $stmts): array
     {
@@ -365,6 +386,8 @@ final class AstCollector
             'has_timeout_check' => false,
             'has_budget_decrement' => false,
             'has_heartbeat_call' => false,
+            'has_array_growth' => false,
+            'has_reset_or_bound' => false,
         ];
 
         $heartbeatAllowlist = ['heartbeat', 'tick'];
@@ -398,6 +421,17 @@ final class AstCollector
                     if (in_array($name, $heartbeatAllowlist, true)) {
                         $signals['has_heartbeat_call'] = true;
                     }
+                    if (in_array($name, ['array_shift', 'array_pop', 'array_splice', 'array_slice'], true)) {
+                        $signals['has_reset_or_bound'] = true;
+                    }
+                }
+
+                if ($expr instanceof Expr\Assign && $this->isArrayGrowthAssignment($expr)) {
+                    $signals['has_array_growth'] = true;
+                }
+
+                if ($expr instanceof Expr\Assign && $this->isArrayResetAssignment($expr)) {
+                    $signals['has_reset_or_bound'] = true;
                 }
             }
 
@@ -406,6 +440,9 @@ final class AstCollector
                     if ($this->isTimeComparison($stmt->cond->left) || $this->isTimeComparison($stmt->cond->right)) {
                         $signals['has_timeout_check'] = true;
                     }
+                }
+                if ($this->containsCountCheck($stmt->cond)) {
+                    $signals['has_reset_or_bound'] = true;
                 }
             }
         }
@@ -424,6 +461,57 @@ final class AstCollector
         return $name === 'time' || $name === 'microtime';
     }
 
+    private function isArrayGrowthAssignment(Expr\Assign $assign): bool
+    {
+        if (!$assign->var instanceof Expr\ArrayDimFetch) {
+            return false;
+        }
+
+        return $assign->var->var instanceof Expr\Variable;
+    }
+
+    private function isArrayResetAssignment(Expr\Assign $assign): bool
+    {
+        if (!$assign->var instanceof Expr\Variable) {
+            return false;
+        }
+
+        if ($assign->expr instanceof Expr\Array_) {
+            return true;
+        }
+
+        if ($assign->expr instanceof Expr\FuncCall) {
+            $name = strtolower($this->callName($assign->expr));
+
+            return $name === 'array_slice';
+        }
+
+        return false;
+    }
+
+    private function containsCountCheck(Expr $expr): bool
+    {
+        if ($expr instanceof Expr\FuncCall) {
+            return strtolower($this->callName($expr)) === 'count';
+        }
+
+        foreach ($expr->getSubNodeNames() as $childName) {
+            $child = $expr->{$childName};
+            if ($child instanceof Expr && $this->containsCountCheck($child)) {
+                return true;
+            }
+            if (is_array($child)) {
+                foreach ($child as $nested) {
+                    if ($nested instanceof Expr && $this->containsCountCheck($nested)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
     private function callName(Expr\MethodCall|Expr\StaticCall|Expr\FuncCall $call): string
     {
         if ($call instanceof Expr\FuncCall) {
@@ -440,8 +528,65 @@ final class AstCollector
                 return $call->var->name;
             }
         }
+        if ($call instanceof Expr\StaticCall && $call->class instanceof Name) {
+            return $call->class->toString();
+        }
 
         return '';
+    }
+
+    private function hasArrayOptionKey(Expr\MethodCall|Expr\StaticCall|Expr\FuncCall $call, array $keys): bool
+    {
+        foreach ($call->args as $arg) {
+            if (!$arg->value instanceof Expr\Array_) {
+                continue;
+            }
+
+            foreach ($arg->value->items as $item) {
+                if ($item === null || !$item->key instanceof Node\Scalar\String_) {
+                    continue;
+                }
+
+                $key = strtolower($item->key->value);
+                if (in_array($key, $keys, true)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private function isCurlTimeoutSetter(Expr\MethodCall|Expr\StaticCall|Expr\FuncCall $call): bool
+    {
+        if (!$call instanceof Expr\FuncCall || strtolower($this->callName($call)) !== 'curl_setopt') {
+            return false;
+        }
+
+        if (count($call->args) < 2) {
+            return false;
+        }
+
+        $secondArg = $call->args[1]->value;
+        if ($secondArg instanceof Expr\ClassConstFetch) {
+            return false;
+        }
+
+        return $secondArg instanceof Expr\ConstFetch
+            && in_array(
+                strtoupper($this->nameToString($secondArg->name)),
+                ['CURLOPT_TIMEOUT', 'CURLOPT_CONNECTTIMEOUT'],
+                true
+            );
+    }
+
+    private function hasSecondArrayArg(Expr\MethodCall|Expr\StaticCall|Expr\FuncCall $call): bool
+    {
+        if (!isset($call->args[1])) {
+            return false;
+        }
+
+        return $call->args[1]->value instanceof Expr\Array_;
     }
 
     private function hasLuaArgument(Expr\MethodCall|Expr\StaticCall|Expr\FuncCall $call): bool
@@ -517,6 +662,22 @@ final class AstCollector
         }
 
         return ((int) ($a['end_line'] ?? 0)) <=> ((int) ($b['end_line'] ?? 0));
+    }
+
+    /**
+     * @return array<int, Node>|null
+     */
+    private function parseWithCache(\PhpParser\Parser $parser, string $path, string $content): ?array
+    {
+        $key = $path . '|' . hash('sha256', $content);
+        if (array_key_exists($key, $this->parseCache)) {
+            return $this->parseCache[$key];
+        }
+
+        $parsed = $parser->parse($content);
+        $this->parseCache[$key] = $parsed;
+
+        return $parsed;
     }
 
     private function line(Node $node, bool $start): int

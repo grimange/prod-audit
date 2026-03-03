@@ -1,0 +1,6 @@
+{"score":95,"regression":false,"findings":[{"fingerprint":"fp-lock-1","rule_id":"PR-LOCK-001"},{"fingerprint":"fp-time-1","rule_id":"PR-TIME-001"}]}
+{"score":93,"regression":true,"findings":[{"fingerprint":"fp-lock-1","rule_id":"PR-LOCK-001"},{"fingerprint":"fp-hang-1","rule_id":"PR-HANG-001"}]}
+{"score":92,"regression":true,"findings":[{"fingerprint":"fp-lock-1","rule_id":"PR-LOCK-001"},{"fingerprint":"fp-hang-1","rule_id":"PR-HANG-001"},{"fingerprint":"fp-time-1","rule_id":"PR-TIME-001"}]}
+{"score":91,"regression":false,"findings":[{"fingerprint":"fp-lock-1","rule_id":"PR-LOCK-001"},{"fingerprint":"fp-time-1","rule_id":"PR-TIME-001"}]}
+{"score":90,"regression":true,"findings":[{"fingerprint":"fp-lock-1","rule_id":"PR-LOCK-001"},{"fingerprint":"fp-hang-1","rule_id":"PR-HANG-001"},{"fingerprint":"fp-time-1","rule_id":"PR-TIME-001"}]}
+{"score":90,"regression":false,"findings":[{"fingerprint":"fp-lock-1","rule_id":"PR-LOCK-001"},{"fingerprint":"fp-hang-1","rule_id":"PR-HANG-001"},{"fingerprint":"fp-time-1","rule_id":"PR-TIME-001"},{"fingerprint":"fp-obs-1","rule_id":"PR-OBS-001"}]}

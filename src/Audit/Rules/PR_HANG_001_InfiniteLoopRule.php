@@ -20,8 +20,12 @@ final class PR_HANG_001_InfiniteLoopRule implements InvariantRuleInterface
         return new RuleMetadata(
             id: 'PR-HANG-001',
             title: 'Infinite Loop Without Yield',
-            description: 'Detects infinite loop patterns without sleep, yield, heartbeat, or timeout hints.',
             invariant: true,
+            category: Category::HANG->value,
+            pack: 'reliability',
+            defaultSeverity: Severity::Critical,
+            description: 'Detects infinite loop patterns without sleep, yield, heartbeat, or timeout hints.',
+            whyItMatters: 'Unbounded loops can starve workers and trigger full service outages.',
         );
     }
 
@@ -143,7 +147,7 @@ final class PR_HANG_001_InfiniteLoopRule implements InvariantRuleInterface
             id: sprintf('PR-HANG-001-%03d', $index),
             ruleId: 'PR-HANG-001',
             title: 'Infinite Loop Without Yield',
-            category: 'reliability',
+            category: Category::HANG->value,
             severity: Severity::Critical,
             confidence: $confidence,
             message: 'Infinite loop without yield or timeout.',

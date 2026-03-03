@@ -8,6 +8,7 @@ use ProdAudit\Audit\AuditRunner;
 use ProdAudit\Audit\Baseline\BaselineRepository;
 use ProdAudit\Audit\Plugins\PluginLoader;
 use ProdAudit\Audit\Profiles\ProfileRegistry;
+use ProdAudit\Audit\Rules\PackRegistry;
 use ProdAudit\Audit\Rules\RuleRegistry;
 use ProdAudit\Utils\PathNormalizer;
 use Symfony\Component\Console\Command\Command;
@@ -25,6 +26,7 @@ final class BaselineCommand extends Command
         private readonly BaselineRepository $baselineRepository,
         private readonly PluginLoader $pluginLoader,
         private readonly RuleRegistry $ruleRegistry,
+        private readonly PackRegistry $packRegistry,
     ) {
         parent::__construct();
     }
@@ -44,7 +46,7 @@ final class BaselineCommand extends Command
     {
         try {
             $scanPath = PathNormalizer::normalize((string) $input->getArgument('path'));
-            $this->pluginLoader->load($scanPath, $this->profileRegistry, $this->ruleRegistry);
+            $this->pluginLoader->load($scanPath, $this->profileRegistry, $this->ruleRegistry, $this->packRegistry);
             $profileName = (string) $input->getOption('profile');
             $profile = $this->profileRegistry->get($profileName);
 

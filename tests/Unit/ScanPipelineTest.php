@@ -48,6 +48,25 @@ final class ScanPipelineTest extends TestCase
         $findings = $report['findings'] ?? [];
         self::assertIsArray($findings);
         self::assertNotEmpty($findings);
+        self::assertIsArray($report['tasks'] ?? null);
+        self::assertArrayHasKey('policy_result', $report);
+    }
+
+    public function testScanSupportsSarifAndCheckstyleExports(): void
+    {
+        $application = new Application();
+        $command = $application->find('scan');
+        $tester = new CommandTester($command);
+
+        $tester->execute([
+            'path' => 'tests/Fixtures',
+            '--profile' => 'dialer-24x7',
+            '--out' => $this->outputDirectory,
+            '--export' => ['sarif', 'checkstyle'],
+        ]);
+
+        self::assertFileExists($this->outputDirectory . '/latest.sarif');
+        self::assertFileExists($this->outputDirectory . '/latest.checkstyle.xml');
     }
 
     private function removeDirectory(string $path): void

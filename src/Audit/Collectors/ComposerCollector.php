@@ -19,6 +19,8 @@ final class ComposerCollector
             return [
                 'exists' => false,
                 'packages' => [],
+                'require' => [],
+                'require_dev' => [],
             ];
         }
 
@@ -28,15 +30,23 @@ final class ComposerCollector
             return [
                 'exists' => true,
                 'packages' => [],
+                'require' => [],
+                'require_dev' => [],
             ];
         }
 
-        $packages = array_keys((array) ($data['require'] ?? []));
+        $require = (array) ($data['require'] ?? []);
+        $requireDev = (array) ($data['require-dev'] ?? []);
+        $packages = array_values(array_unique(array_merge(array_keys($require), array_keys($requireDev))));
         sort($packages, SORT_STRING);
+        ksort($require, SORT_STRING);
+        ksort($requireDev, SORT_STRING);
 
         return [
             'exists' => true,
             'packages' => $packages,
+            'require' => $require,
+            'require_dev' => $requireDev,
         ];
     }
 }

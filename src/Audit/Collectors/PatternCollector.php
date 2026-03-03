@@ -7,13 +7,33 @@ namespace ProdAudit\Audit\Collectors;
 final class PatternCollector
 {
     /**
+     * @var array<string, string>
+     */
+    private array $contentCache = [];
+    /**
+     * @var array<string, array<string, array<int, array{file: string, line: int, excerpt: string}>>>
+     */
+    private array $groupMatchCache = [];
+
+    /**
      * @param array<int, array{path: string, relative_path: string, extension: string, size: int}> $files
      * @param array<int, string> $patterns
      * @return array<string, array<int, array{file: string, line: int, excerpt: string}>>
      */
     public function collect(array $files, array $patterns = []): array
     {
-        $defaultGroups = ['exceptions', 'loops', 'redis'];
+        $defaultGroups = [
+            'exceptions',
+            'loops',
+            'redis',
+            'stage6_reliability',
+            'stage6_timeouts',
+            'stage6_bounds',
+            'stage6_errors',
+            'stage6_observability',
+            'stage6_config',
+            'stage6_security',
+        ];
         $groups = $patterns === [] ? $defaultGroups : $patterns;
         sort($groups, SORT_STRING);
 
@@ -28,13 +48,10 @@ final class PatternCollector
                 continue;
             }
 
-            $content = file_get_contents($path);
-            if (!is_string($content)) {
-                continue;
-            }
+            $content = $this->readContent($path);
 
             foreach ($groups as $group) {
-                foreach ($this->matchesForGroup($group, $content, $file['relative_path']) as $match) {
+                foreach ($this->matchesForGroupCached($path, $group, $content, $file['relative_path']) as $match) {
                     $result[$group][] = $match;
                 }
             }
@@ -88,8 +105,81 @@ final class PatternCollector
                 $relativePath,
                 true
             ),
+            'stage6_reliability' => $this->extractMatches(
+                '/\b(lock|fencing|token|ttl|expire|retry|backoff|max(?:_| )?attempt|signal|shutdown|cleanup|transition|state|static)\b/i',
+                $content,
+                $relativePath,
+                true
+            ),
+            'stage6_timeouts' => $this->extractMatches(
+                '/\b(timeout|socket|stream|fread|fgets|file_get_contents|query|execute|redis|while\s*\(\s*true\s*\))\b/i',
+                $content,
+                $relativePath,
+                true
+            ),
+            'stage6_bounds' => $this->extractMatches(
+                '/\b(redis|cache|evict|ttl|queue|publish|append|map|array|chunk|batch|log)\b/i',
+                $content,
+                $relativePath,
+                true
+            ),
+            'stage6_errors' => $this->extractMatches(
+                '/\b(catch|throw|promise|future|return|null|warning|@|wait|get)\b/i',
+                $content,
+                $relativePath,
+                true
+            ),
+            'stage6_observability' => $this->extractMatches(
+                '/\b(log|logger|correlation|trace|request_id|job_id|startup|shutdown|error)\b/i',
+                $content,
+                $relativePath,
+                true
+            ),
+            'stage6_config' => $this->extractMatches(
+                '/\b(getenv|config|default|localhost|127\.0\.0\.1|port|host|password|secret|api[_-]?key)\b/i',
+                $content,
+                $relativePath,
+                true
+            ),
+            'stage6_security' => $this->extractMatches(
+                '/\b(secret|token|password|api[_-]?key|md5|sha1|shell_exec|exec|passthru|eval|SELECT|INSERT|UPDATE|DELETE)\b/i',
+                $content,
+                $relativePath,
+                true
+            ),
             default => [],
         };
+    }
+
+    /**
+     * @return array<int, array{file: string, line: int, excerpt: string}>
+     */
+    private function matchesForGroupCached(string $path, string $group, string $content, string $relativePath): array
+    {
+        if (isset($this->groupMatchCache[$path][$group])) {
+            return $this->groupMatchCache[$path][$group];
+        }
+
+        $matches = $this->matchesForGroup($group, $content, $relativePath);
+        $this->groupMatchCache[$path][$group] = $matches;
+
+        return $matches;
+    }
+
+    private function readContent(string $path): string
+    {
+        if (isset($this->contentCache[$path])) {
+            return $this->contentCache[$path];
+        }
+
+        $content = file_get_contents($path);
+        if (!is_string($content)) {
+            return '';
+        }
+
+        $this->contentCache[$path] = $content;
+
+        return $content;
     }
 
     /**

@@ -20,8 +20,12 @@ final class PR_ERR_001_SwallowedExceptionsRule implements RuleInterface
         return new RuleMetadata(
             id: 'PR-ERR-001',
             title: 'Swallowed Exceptions',
-            description: 'Detects catch blocks that swallow exceptions without escalation or logging.',
             invariant: false,
+            category: Category::ERRORS->value,
+            pack: 'error-handling',
+            defaultSeverity: Severity::Major,
+            description: 'Detects catch blocks that swallow exceptions without escalation or logging.',
+            whyItMatters: 'Swallowed exceptions hide production failures and extend incident duration.',
         );
     }
 
@@ -130,7 +134,7 @@ final class PR_ERR_001_SwallowedExceptionsRule implements RuleInterface
             id: sprintf('PR-ERR-001-%03d', $index),
             ruleId: 'PR-ERR-001',
             title: 'Swallowed Exceptions',
-            category: 'reliability',
+            category: Category::ERRORS->value,
             severity: Severity::Major,
             confidence: $confidence,
             message: 'Exception caught but not handled or escalated',

@@ -1,0 +1,280 @@
+{
+    "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+    "version": "2.1.0",
+    "runs": [
+        {
+            "tool": {
+                "driver": {
+                    "name": "prod-audit",
+                    "version": "0.5.0-stage5"
+                }
+            },
+            "results": [
+                {
+                    "ruleId": "PR-HANG-001",
+                    "level": "error",
+                    "message": {
+                        "text": "Infinite loop without yield or timeout."
+                    },
+                    "locations": [
+                        {
+                            "physicalLocation": {
+                                "artifactLocation": {
+                                    "uri": "ast/infinite_loop_no_yield.php"
+                                },
+                                "region": {
+                                    "startLine": 5
+                                }
+                            }
+                        }
+                    ],
+                    "fingerprints": {
+                        "primaryLocationLineHash": "07683ece05c987a46801be59f62eb45afed2a6212aacb19d3a08f4b5401e67ff"
+                    }
+                },
+                {
+                    "ruleId": "PR-ERR-001",
+                    "level": "error",
+                    "message": {
+                        "text": "Exception caught but not handled or escalated"
+                    },
+                    "locations": [
+                        {
+                            "physicalLocation": {
+                                "artifactLocation": {
+                                    "uri": "bad_exceptions.php"
+                                },
+                                "region": {
+                                    "startLine": 5
+                                }
+                            }
+                        }
+                    ],
+                    "fingerprints": {
+                        "primaryLocationLineHash": "086bfcfe4f0901264666844820ade6c8bc12e47b960b3e8fae1c0007a76fd4e0"
+                    }
+                },
+                {
+                    "ruleId": "PR-HANG-001",
+                    "level": "error",
+                    "message": {
+                        "text": "Infinite loop without yield or timeout."
+                    },
+                    "locations": [
+                        {
+                            "physicalLocation": {
+                                "artifactLocation": {
+                                    "uri": "stage5/bounded_array_in_loop.php"
+                                },
+                                "region": {
+                                    "startLine": 7
+                                }
+                            }
+                        }
+                    ],
+                    "fingerprints": {
+                        "primaryLocationLineHash": "0b7e80db588653d2c318bf57c7d16da88ac4464405ff0b748703a09bd8540157"
+                    }
+                },
+                {
+                    "ruleId": "PR-ERR-001",
+                    "level": "error",
+                    "message": {
+                        "text": "Exception caught but not handled or escalated"
+                    },
+                    "locations": [
+                        {
+                            "physicalLocation": {
+                                "artifactLocation": {
+                                    "uri": "ast/swallowed_empty_catch.php"
+                                },
+                                "region": {
+                                    "startLine": 7
+                                }
+                            }
+                        }
+                    ],
+                    "fingerprints": {
+                        "primaryLocationLineHash": "14856a0a0726b6767f62933ba211c7594b75cf390f135123ea561513a4c7e07b"
+                    }
+                },
+                {
+                    "ruleId": "PR-ERR-001",
+                    "level": "error",
+                    "message": {
+                        "text": "Exception caught but not handled or escalated"
+                    },
+                    "locations": [
+                        {
+                            "physicalLocation": {
+                                "artifactLocation": {
+                                    "uri": "bad_exceptions.php"
+                                },
+                                "region": {
+                                    "startLine": 9
+                                }
+                            }
+                        }
+                    ],
+                    "fingerprints": {
+                        "primaryLocationLineHash": "1dfe835d761e5ef0c2e40ae7cfa5a452d26b3eabd81533b5c496f2cbf28f0924"
+                    }
+                },
+                {
+                    "ruleId": "PR-BOUND-002",
+                    "level": "error",
+                    "message": {
+                        "text": "Infinite loop appends to in-memory array without bound/reset."
+                    },
+                    "locations": [
+                        {
+                            "physicalLocation": {
+                                "artifactLocation": {
+                                    "uri": "stage5/unbounded_array_in_loop.php"
+                                },
+                                "region": {
+                                    "startLine": 7
+                                }
+                            }
+                        }
+                    ],
+                    "fingerprints": {
+                        "primaryLocationLineHash": "3fcc295e12fb9ff8e8bf8b52423cd6e1347c6cdec93dfce067d158e0a952d2a8"
+                    }
+                },
+                {
+                    "ruleId": "PR-HANG-001",
+                    "level": "error",
+                    "message": {
+                        "text": "Infinite loop without yield or timeout."
+                    },
+                    "locations": [
+                        {
+                            "physicalLocation": {
+                                "artifactLocation": {
+                                    "uri": "stage5/unbounded_array_in_loop.php"
+                                },
+                                "region": {
+                                    "startLine": 7
+                                }
+                            }
+                        }
+                    ],
+                    "fingerprints": {
+                        "primaryLocationLineHash": "4f7120b499f376eb29f0e138161c29db5cd4e122ff3f3790fb1460f63083530f"
+                    }
+                },
+                {
+                    "ruleId": "PR-LOCK-001",
+                    "level": "error",
+                    "message": {
+                        "text": "Lock renew may not be owner-scoped or atomic."
+                    },
+                    "locations": [
+                        {
+                            "physicalLocation": {
+                                "artifactLocation": {
+                                    "uri": "bad_lock.php"
+                                },
+                                "region": {
+                                    "startLine": 3
+                                }
+                            }
+                        }
+                    ],
+                    "fingerprints": {
+                        "primaryLocationLineHash": "5bd03d15156f700596ae0e74840f636a21c1d9e518ed28ee54b55f3b23edc7eb"
+                    }
+                },
+                {
+                    "ruleId": "PR-OBS-001",
+                    "level": "warning",
+                    "message": {
+                        "text": "Logger call does not include correlation/context payload."
+                    },
+                    "locations": [
+                        {
+                            "physicalLocation": {
+                                "artifactLocation": {
+                                    "uri": "stage5/logger_no_context.php"
+                                },
+                                "region": {
+                                    "startLine": 5
+                                }
+                            }
+                        }
+                    ],
+                    "fingerprints": {
+                        "primaryLocationLineHash": "60a0d43e68858e3d23646b838b9f6a9e03dc7d1f60e04ea0b7a9b4fef656b458"
+                    }
+                },
+                {
+                    "ruleId": "PR-HANG-001",
+                    "level": "error",
+                    "message": {
+                        "text": "Infinite loop without yield or timeout."
+                    },
+                    "locations": [
+                        {
+                            "physicalLocation": {
+                                "artifactLocation": {
+                                    "uri": "bad_loops.php"
+                                },
+                                "region": {
+                                    "startLine": 3
+                                }
+                            }
+                        }
+                    ],
+                    "fingerprints": {
+                        "primaryLocationLineHash": "abc276a35c851e42376566166d91789f540e3ff39c87be09e41ffbe061536c38"
+                    }
+                },
+                {
+                    "ruleId": "PR-TIME-001",
+                    "level": "error",
+                    "message": {
+                        "text": "External call missing explicit timeout configuration."
+                    },
+                    "locations": [
+                        {
+                            "physicalLocation": {
+                                "artifactLocation": {
+                                    "uri": "stage5/no_timeout_curl.php"
+                                },
+                                "region": {
+                                    "startLine": 5
+                                }
+                            }
+                        }
+                    ],
+                    "fingerprints": {
+                        "primaryLocationLineHash": "f1b2c0000907a882f2b0091e6901b0348f1bd47bd7fee4d4f4df8f0a8115d1f9"
+                    }
+                },
+                {
+                    "ruleId": "PR-LOCK-001",
+                    "level": "error",
+                    "message": {
+                        "text": "Lock renew may not be owner-scoped or atomic."
+                    },
+                    "locations": [
+                        {
+                            "physicalLocation": {
+                                "artifactLocation": {
+                                    "uri": "ast/redis_expire_no_eval.php"
+                                },
+                                "region": {
+                                    "startLine": 7
+                                }
+                            }
+                        }
+                    ],
+                    "fingerprints": {
+                        "primaryLocationLineHash": "f9475ac0b289be3194136135c8269cd1d3290100e6c90b829d2b0e2d6793d0da"
+                    }
+                }
+            ]
+        }
+    ]
+}

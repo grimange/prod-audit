@@ -13,6 +13,11 @@ interface ProfileInterface
     /**
      * @return array<int, string>
      */
+    public function packNames(): array;
+
+    /**
+     * @return array<int, string>
+     */
     public function ruleIds(): array;
 
     /**

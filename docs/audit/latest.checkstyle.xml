@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<checkstyle version="10.0">
+  <file name="ast/infinite_loop_no_yield.php">
+    <error line="5" severity="critical" message="Infinite loop without yield or timeout." source="PR-HANG-001"/>
+  </file>
+  <file name="ast/redis_expire_no_eval.php">
+    <error line="7" severity="critical" message="Lock renew may not be owner-scoped or atomic." source="PR-LOCK-001"/>
+  </file>
+  <file name="ast/swallowed_empty_catch.php">
+    <error line="7" severity="major" message="Exception caught but not handled or escalated" source="PR-ERR-001"/>
+  </file>
+  <file name="bad_exceptions.php">
+    <error line="5" severity="major" message="Exception caught but not handled or escalated" source="PR-ERR-001"/>
+    <error line="9" severity="major" message="Exception caught but not handled or escalated" source="PR-ERR-001"/>
+  </file>
+  <file name="bad_lock.php">
+    <error line="3" severity="critical" message="Lock renew may not be owner-scoped or atomic." source="PR-LOCK-001"/>
+  </file>
+  <file name="bad_loops.php">
+    <error line="3" severity="critical" message="Infinite loop without yield or timeout." source="PR-HANG-001"/>
+  </file>
+  <file name="stage5/bounded_array_in_loop.php">
+    <error line="7" severity="critical" message="Infinite loop without yield or timeout." source="PR-HANG-001"/>
+  </file>
+  <file name="stage5/logger_no_context.php">
+    <error line="5" severity="minor" message="Logger call does not include correlation/context payload." source="PR-OBS-001"/>
+  </file>
+  <file name="stage5/no_timeout_curl.php">
+    <error line="5" severity="major" message="External call missing explicit timeout configuration." source="PR-TIME-001"/>
+  </file>
+  <file name="stage5/unbounded_array_in_loop.php">
+    <error line="5" severity="major" message="External call missing explicit timeout configuration." source="PR-TIME-001"/>
+  </file>
+</checkstyle>

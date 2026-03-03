@@ -1,0 +1,8 @@
+{
+  "require": {
+    "php": "*",
+    "phpunit/phpunit": "*",
+    "swiftmailer/swiftmailer": "^6.0",
+    "legacy/package": "^0.3"
+  }
+}
