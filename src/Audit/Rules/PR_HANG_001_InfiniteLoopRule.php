@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ProdAudit\Audit\Rules;
 
+use ProdAudit\Audit\Config\Config;
 use ProdAudit\Utils\Fingerprint;
 
 final class PR_HANG_001_InfiniteLoopRule implements InvariantRuleInterface
@@ -49,6 +50,9 @@ final class PR_HANG_001_InfiniteLoopRule implements InvariantRuleInterface
             if ($hasGuard || !((bool) ($loop['body_inspected'] ?? false))) {
                 continue;
             }
+            if ($this->isAllowedLoopScope($collectorData, (string) ($loop['file'] ?? ''))) {
+                continue;
+            }
 
             $evidence = $this->evidenceFactory->fromLocation(
                 type: 'ast_node',
@@ -82,6 +86,10 @@ final class PR_HANG_001_InfiniteLoopRule implements InvariantRuleInterface
             ksort($byFile, SORT_STRING);
 
             foreach ($byFile as $file => $fileMatches) {
+                if (!$this->isWorkerLikeFile($collectorData, $file)) {
+                    continue;
+                }
+
                 $hasYieldHint = false;
                 $loopMatches = [];
                 foreach ($fileMatches as $match) {
@@ -160,5 +168,44 @@ final class PR_HANG_001_InfiniteLoopRule implements InvariantRuleInterface
             advisoryOnly: false,
             invariantFailure: true,
         );
+    }
+
+    /**
+     * @param array<string, mixed> $collectorData
+     */
+    private function isAllowedLoopScope(array $collectorData, string $file): bool
+    {
+        $config = new Config(is_array($collectorData['config'] ?? null) ? $collectorData['config'] : []);
+        $allow = $config->stringList('PR-HANG-001', 'allow_file_contains', []);
+        if ($allow === []) {
+            return false;
+        }
+
+        $file = strtolower($file);
+        foreach ($allow as $token) {
+            if ($token !== '' && str_contains($file, $token)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param array<string, mixed> $collectorData
+     */
+    private function isWorkerLikeFile(array $collectorData, string $file): bool
+    {
+        $config = new Config(is_array($collectorData['config'] ?? null) ? $collectorData['config'] : []);
+        $patterns = $config->stringList('PR-HANG-001', 'worker_entrypoint_patterns', ['worker', 'consumer', 'daemon', 'queue', 'job']);
+        $file = strtolower($file);
+
+        foreach ($patterns as $pattern) {
+            if ($pattern !== '' && str_contains($file, $pattern)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

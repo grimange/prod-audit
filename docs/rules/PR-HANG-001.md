@@ -26,3 +26,24 @@ while (true) {
     usleep(1000);
 }
 ```
+
+## False positive reduction changes (Stage-8)
+
+- Regex fallback is narrowed to worker-like entrypoint files (`worker|consumer|daemon|queue|job` by default).
+- Added config controls:
+  - `rule_config.PR-HANG-001.worker_entrypoint_patterns`
+  - `rule_config.PR-HANG-001.allow_file_contains`
+
+### Stage-8 examples
+
+```php
+while (true) {
+    process();
+}
+```
+
+```php
+while (true) {
+    usleep(1000);
+}
+```

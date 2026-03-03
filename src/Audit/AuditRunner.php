@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ProdAudit\Audit;
 
 use ProdAudit\Audit\Actions\ActionPlanner;
+use ProdAudit\Audit\Config\Config;
 use ProdAudit\Audit\Collectors\AstCollector;
 use ProdAudit\Audit\Collectors\ComposerCollector;
 use ProdAudit\Audit\Collectors\FileCollector;
@@ -65,9 +66,10 @@ final class AuditRunner
         array $suppressionEntries = [],
         bool $writeHistory = true,
         array $ignoredDirectories = [],
+        ?Config $config = null,
     ): array {
         $start = microtime(true);
-        $collectorData = $this->collectCollectorData($scanPath, $ignoredDirectories);
+        $collectorData = $this->collectCollectorData($scanPath, $ignoredDirectories, $config ?? new Config());
         $evaluation = $this->evaluateRules($collectorData, $profile);
         $findings = $evaluation['findings'];
         $filtered = $this->findingFilter->filter($findings, $baselineEntries, $suppressionEntries);
@@ -239,7 +241,7 @@ final class AuditRunner
      * @param array<int, string> $ignoredDirectories
      * @return array<string, mixed>
      */
-    private function collectCollectorData(string $scanPath, array $ignoredDirectories = []): array
+    private function collectCollectorData(string $scanPath, array $ignoredDirectories = [], ?Config $config = null): array
     {
         $collectorData = [];
         $collectorData['files'] = $ignoredDirectories === []
@@ -249,6 +251,7 @@ final class AuditRunner
         $collectorData['patterns'] = $this->patternCollector->collect($collectorData['files']);
         $collectorData['composer'] = $this->composerCollector->collect($scanPath);
         $collectorData['php_config'] = $this->phpConfigCollector->collect();
+        $collectorData['config'] = ($config ?? new Config())->values();
 
         return $collectorData;
     }

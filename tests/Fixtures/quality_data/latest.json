@@ -1,0 +1,15 @@
+{
+  "findings": [
+    {"rule_id":"PR-OBS-001","fingerprint":"fp-obs-2","evidence":[{"type":"ast_node","file":"tests/b.php","excerpt":"$logger->info('x');"}]},
+    {"rule_id":"PR-ERR-001","fingerprint":"fp-err-1","evidence":[{"type":"ast_node","file":"src/a.php","excerpt":"catch (...) {}"}]},
+    {"rule_id":"PR-TIME-001","fingerprint":"fp-time-1","evidence":[{"type":"ast_node","file":"src/http.php","excerpt":"$client->request('GET',$u);"}]},
+    {"rule_id":"PR-HANG-001","fingerprint":"fp-hang-1","evidence":[{"type":"ast_node","file":"src/worker.php","excerpt":"while(true){}"}]},
+    {"rule_id":"PR-LOCK-001","fingerprint":"fp-lock-1","evidence":[{"type":"ast_node","file":"src/lock.php","excerpt":"$redis->expire($k,10);"}]}
+  ],
+  "insights": {
+    "hotspots": [
+      {"file":"tests/b.php","churn_score":0.8,"findings":1},
+      {"file":"src/http.php","churn_score":0.3,"findings":1}
+    ]
+  }
+}

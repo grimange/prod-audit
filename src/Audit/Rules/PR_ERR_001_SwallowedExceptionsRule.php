@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ProdAudit\Audit\Rules;
 
+use ProdAudit\Audit\Config\Config;
 use ProdAudit\Utils\Fingerprint;
 
 final class PR_ERR_001_SwallowedExceptionsRule implements RuleInterface
@@ -44,8 +45,10 @@ final class PR_ERR_001_SwallowedExceptionsRule implements RuleInterface
             $onlyControlFlow = (bool) ($catchBlock['only_control_flow'] ?? false);
             $hasRethrow = (bool) ($catchBlock['has_rethrow'] ?? false);
             $hasObservabilityCall = (bool) ($catchBlock['has_observability_call'] ?? false);
+            $snippet = (string) ($catchBlock['snippet'] ?? '');
+            $hasIntentionalMarker = $this->allowIntentionalMarker($collectorData) && preg_match('/intentional/i', $snippet) === 1;
 
-            if ((!$isEmpty && !$onlyControlFlow) || $hasRethrow || $hasObservabilityCall) {
+            if ((!$isEmpty && !$onlyControlFlow) || $hasRethrow || $hasObservabilityCall || $hasIntentionalMarker) {
                 continue;
             }
 
@@ -54,7 +57,7 @@ final class PR_ERR_001_SwallowedExceptionsRule implements RuleInterface
                 file: (string) ($catchBlock['file'] ?? ''),
                 startLine: (int) ($catchBlock['start_line'] ?? 1),
                 endLine: (int) ($catchBlock['end_line'] ?? 1),
-                excerpt: (string) ($catchBlock['snippet'] ?? '')
+                excerpt: $snippet
             );
 
             $findings[] = $this->newFinding($index, $evidence, Confidence::High);
@@ -75,6 +78,9 @@ final class PR_ERR_001_SwallowedExceptionsRule implements RuleInterface
                 }
 
                 $excerpt = (string) ($match['excerpt'] ?? '');
+                if ($this->allowIntentionalMarker($collectorData) && preg_match('/intentional/i', $excerpt) === 1) {
+                    continue;
+                }
                 if ($excerpt === '' || !$this->looksLikeSwallowedCatch($excerpt)) {
                     continue;
                 }
@@ -145,5 +151,15 @@ final class PR_ERR_001_SwallowedExceptionsRule implements RuleInterface
             evidence: [$evidence],
             fingerprint: $fingerprint,
         );
+    }
+
+    /**
+     * @param array<string, mixed> $collectorData
+     */
+    private function allowIntentionalMarker(array $collectorData): bool
+    {
+        $config = new Config(is_array($collectorData['config'] ?? null) ? $collectorData['config'] : []);
+
+        return $config->bool('PR-ERR-001', 'allow_intentional_marker', true);
     }
 }

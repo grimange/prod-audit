@@ -98,6 +98,7 @@ final class AstCollector
                 'start_line' => 1,
                 'end_line' => max(1, substr_count($content, "\n") + 1),
                 'calls' => [],
+                'timeout_option_vars' => [],
             ];
 
             $scopeCounter = $this->walkNodes(
@@ -162,6 +163,7 @@ final class AstCollector
                     'start_line' => $this->line($node, true),
                     'end_line' => $this->line($node, false),
                     'calls' => [],
+                    'timeout_option_vars' => [],
                 ];
             }
 
@@ -223,12 +225,25 @@ final class AstCollector
                     'has_connect_timeout_option' => $this->hasArrayOptionKey($node, ['connect_timeout']),
                     'is_curl_timeout_setter' => $this->isCurlTimeoutSetter($node),
                     'has_context_array' => $this->hasSecondArrayArg($node),
+                    'arg_variables' => $this->callArgumentVariables($node),
                     'snippet' => $fileCollector->snippet($path, $this->line($node, true), $this->line($node, false)),
                 ];
 
                 $scopeIndex = $this->findScopeIndexByRef($scopes, $scopeRef, $relativePath);
                 if ($scopeIndex !== null) {
                     $scopes[$scopeIndex]['calls'][] = $callData;
+                }
+            }
+
+            if ($node instanceof Expr\Assign && $node->var instanceof Expr\Variable) {
+                $scopeIndex = $this->findScopeIndexByRef($scopes, $scopeRef, $relativePath);
+                if ($scopeIndex !== null && $this->assignmentHasTimeoutOption($node)) {
+                    $name = $this->variableName($node->var);
+                    if ($name !== '') {
+                        $scopes[$scopeIndex]['timeout_option_vars'][] = $name;
+                        $scopes[$scopeIndex]['timeout_option_vars'] = array_values(array_unique($scopes[$scopeIndex]['timeout_option_vars']));
+                        sort($scopes[$scopeIndex]['timeout_option_vars'], SORT_STRING);
+                    }
                 }
             }
 
@@ -512,6 +527,56 @@ final class AstCollector
         return false;
     }
 
+    private function assignmentHasTimeoutOption(Expr\Assign $assign): bool
+    {
+        if (!$assign->expr instanceof Expr\Array_) {
+            return false;
+        }
+
+        foreach ($assign->expr->items as $item) {
+            if ($item === null || $item->key === null) {
+                continue;
+            }
+
+            $key = strtolower(trim($this->nameToString($item->key), '\'"'));
+            if ($key === 'timeout' || $key === 'connect_timeout') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function callArgumentVariables(Expr\MethodCall|Expr\StaticCall|Expr\FuncCall $call): array
+    {
+        $vars = [];
+        foreach ($call->args as $arg) {
+            if ($arg->value instanceof Expr\Variable) {
+                $name = $this->variableName($arg->value);
+                if ($name !== '') {
+                    $vars[] = $name;
+                }
+            }
+        }
+
+        $vars = array_values(array_unique($vars));
+        sort($vars, SORT_STRING);
+
+        return $vars;
+    }
+
+    private function variableName(Expr\Variable $variable): string
+    {
+        if (!is_string($variable->name)) {
+            return '';
+        }
+
+        return strtolower($variable->name);
+    }
+
     private function callName(Expr\MethodCall|Expr\StaticCall|Expr\FuncCall $call): string
     {
         if ($call instanceof Expr\FuncCall) {
@@ -612,6 +677,9 @@ final class AstCollector
     {
         if ($name instanceof Name || $name instanceof Identifier) {
             return $name->toString();
+        }
+        if ($name instanceof Node\Scalar\String_) {
+            return $name->value;
         }
 
         return '';

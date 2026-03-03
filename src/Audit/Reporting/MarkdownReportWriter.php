@@ -51,6 +51,7 @@ final class MarkdownReportWriter
         $insights = is_array($report['insights'] ?? null) ? $report['insights'] : [];
         $forecast = is_array($report['forecast'] ?? null) ? $report['forecast'] : [];
         $actions = is_array($report['actions'] ?? null) ? $report['actions'] : [];
+        $quality = is_array($report['quality'] ?? null) ? $report['quality'] : [];
 
         $lines[] = '## Executive Summary';
         $lines[] = '';
@@ -83,6 +84,28 @@ final class MarkdownReportWriter
             $lines[] = '- Policy Reasons: none';
         } else {
             $lines[] = '- Policy Reasons: ' . implode(', ', array_map(static fn (mixed $value): string => (string) $value, $policyReasons));
+        }
+        $lines[] = '';
+
+        $lines[] = '## Quality Summary';
+        $lines[] = '';
+        $lines[] = '- Overall Noise Score: ' . sprintf('%.3f', (float) ($quality['overall_noise_score'] ?? 0.0));
+        $topNoisyRules = is_array($quality['top_noisy_rules'] ?? null) ? $quality['top_noisy_rules'] : [];
+        if ($topNoisyRules === []) {
+            $lines[] = '- Top Noisy Rules: none';
+        } else {
+            $lines[] = '- Top Noisy Rules:';
+            foreach (array_slice($topNoisyRules, 0, 5) as $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
+                $lines[] = sprintf(
+                    '  - %s noise=%.3f findings=%d',
+                    (string) ($row['rule_id'] ?? ''),
+                    (float) ($row['noise_score'] ?? 0.0),
+                    (int) ($row['findings_count'] ?? 0)
+                );
+            }
         }
         $lines[] = '';
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ProdAudit\Audit\Rules;
 
+use ProdAudit\Audit\Config\Config;
 use ProdAudit\Utils\Fingerprint;
 
 final class PR_OBS_001_MissingLoggerContextRule implements RuleInterface
@@ -44,6 +45,10 @@ final class PR_OBS_001_MissingLoggerContextRule implements RuleInterface
             $calls = is_array($scope['calls'] ?? null) ? $scope['calls'] : [];
             foreach ($calls as $call) {
                 if (!is_array($call) || !$this->isLoggerCall($call)) {
+                    continue;
+                }
+
+                if ($this->isAllowedLogMethod($collectorData, (string) ($call['name'] ?? ''))) {
                     continue;
                 }
 
@@ -94,5 +99,16 @@ final class PR_OBS_001_MissingLoggerContextRule implements RuleInterface
         $target = strtolower((string) ($call['target'] ?? ''));
 
         return $target === 'log' || str_contains($target, 'logger');
+    }
+
+    /**
+     * @param array<string, mixed> $collectorData
+     */
+    private function isAllowedLogMethod(array $collectorData, string $method): bool
+    {
+        $config = new Config(is_array($collectorData['config'] ?? null) ? $collectorData['config'] : []);
+        $allowed = $config->stringList('PR-OBS-001', 'allow_log_methods', []);
+
+        return in_array(strtolower($method), $allowed, true);
     }
 }

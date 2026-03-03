@@ -1,0 +1,6 @@
+{"timestamp_iso":"2026-01-01T00:00:01+00:00","fingerprint":"fp-obs-1","rule_id":"PR-OBS-001","label":"false_positive"}
+{"timestamp_iso":"2026-01-01T00:00:02+00:00","fingerprint":"fp-obs-2","rule_id":"PR-OBS-001","label":"noisy"}
+{"timestamp_iso":"2026-01-01T00:00:03+00:00","fingerprint":"fp-err-1","rule_id":"PR-ERR-001","label":"true_positive"}
+{"timestamp_iso":"2026-01-01T00:00:04+00:00","fingerprint":"fp-time-1","rule_id":"PR-TIME-001","label":"true_positive"}
+{"timestamp_iso":"2026-01-01T00:00:05+00:00","fingerprint":"fp-hang-1","rule_id":"PR-HANG-001","label":"true_positive"}
+{"timestamp_iso":"2026-01-01T00:00:06+00:00","fingerprint":"fp-lock-1","rule_id":"PR-LOCK-001","label":"noisy"}

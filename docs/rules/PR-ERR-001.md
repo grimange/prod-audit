@@ -24,3 +24,26 @@ try {
     throw $e;
 }
 ```
+
+## False positive reduction changes (Stage-8)
+
+- Catch blocks with explicit `intentional` marker comments are exempted.
+- Exemption path for observability calls remains deterministic (`report`/`notify`/`emit` and existing logging calls).
+
+### Stage-8 examples
+
+```php
+try {
+    work();
+} catch (\Throwable $e) {
+    // intentional: best-effort cleanup path
+}
+```
+
+```php
+try {
+    work();
+} catch (\Throwable $e) {
+    report($e);
+}
+```

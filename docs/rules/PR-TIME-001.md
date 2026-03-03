@@ -22,3 +22,19 @@ Without timeouts, workers can block indefinitely on downstream failures and caus
 
 - Set timeout values for all external calls.
 - Centralize timeout defaults in shared client factories.
+
+## False positive reduction changes (Stage-8)
+
+- Shared options arrays with `timeout`/`connect_timeout` keys in scope now suppress findings.
+- Added optional target allowlist via `rule_config.PR-TIME-001.allow_http_targets`.
+
+### Stage-8 examples
+
+```php
+$options = ['timeout' => 2.0, 'connect_timeout' => 1.0];
+$client->request('GET', $url, $options); // not flagged
+```
+
+```php
+$client->request('GET', $url); // flagged
+```

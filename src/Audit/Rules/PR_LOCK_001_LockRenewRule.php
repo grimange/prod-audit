@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ProdAudit\Audit\Rules;
 
+use ProdAudit\Audit\Config\Config;
 use ProdAudit\Utils\Fingerprint;
 
 final class PR_LOCK_001_LockRenewRule implements InvariantRuleInterface
@@ -58,6 +59,9 @@ final class PR_LOCK_001_LockRenewRule implements InvariantRuleInterface
                 }
 
                 if (($name === 'expire' || $name === 'pexpire' || $name === 'setex') && $isRedisTarget) {
+                    if ($this->isAllowedRenewSnippet($collectorData, (string) ($call['snippet'] ?? ''))) {
+                        continue;
+                    }
                     $expireCalls[] = $call;
                 }
             }
@@ -109,6 +113,9 @@ final class PR_LOCK_001_LockRenewRule implements InvariantRuleInterface
                 foreach ($fileMatches as $match) {
                     $excerpt = (string) ($match['excerpt'] ?? '');
                     if (preg_match('/->\s*(?:pexpire|expire|setex)\s*\(/i', $excerpt) === 1) {
+                        if ($this->isAllowedRenewSnippet($collectorData, $excerpt)) {
+                            continue;
+                        }
                         $renewMatches[] = $match;
                     }
                     if (preg_match('/\b(owner|token)\b/i', $excerpt) === 1) {
@@ -185,5 +192,26 @@ final class PR_LOCK_001_LockRenewRule implements InvariantRuleInterface
             advisoryOnly: false,
             invariantFailure: true,
         );
+    }
+
+    /**
+     * @param array<string, mixed> $collectorData
+     */
+    private function isAllowedRenewSnippet(array $collectorData, string $snippet): bool
+    {
+        $config = new Config(is_array($collectorData['config'] ?? null) ? $collectorData['config'] : []);
+        $allow = $config->stringList('PR-LOCK-001', 'allow_renew_snippet_contains', []);
+        if ($allow === []) {
+            return false;
+        }
+
+        $snippet = strtolower($snippet);
+        foreach ($allow as $token) {
+            if ($token !== '' && str_contains($snippet, $token)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

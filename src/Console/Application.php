@@ -32,9 +32,12 @@ use ProdAudit\Console\Commands\CompareCommand;
 use ProdAudit\Console\Commands\DocsCheckCommand;
 use ProdAudit\Console\Commands\ExplainRuleCommand;
 use ProdAudit\Console\Commands\ForecastCommand;
+use ProdAudit\Console\Commands\QualityCommand;
+use ProdAudit\Console\Commands\ReproduceCommand;
 use ProdAudit\Console\Commands\ScanCommand;
 use ProdAudit\Console\Commands\TriageCommand;
 use ProdAudit\Console\Commands\TriageListCommand;
+use ProdAudit\Console\Commands\TriageSuggestCommand;
 use Symfony\Component\Console\Application as SymfonyApplication;
 
 final class Application extends SymfonyApplication
@@ -78,5 +81,8 @@ final class Application extends SymfonyApplication
         $this->add(new TriageCommand());
         $this->add(new TriageListCommand());
         $this->add(new ForecastCommand());
+        $this->add(new QualityCommand($ruleRegistry));
+        $this->add(new ReproduceCommand());
+        $this->add(new TriageSuggestCommand());
     }
 }

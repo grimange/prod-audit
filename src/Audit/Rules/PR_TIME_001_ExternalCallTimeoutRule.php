@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ProdAudit\Audit\Rules;
 
+use ProdAudit\Audit\Config\Config;
 use ProdAudit\Utils\Fingerprint;
 
 final class PR_TIME_001_ExternalCallTimeoutRule implements RuleInterface
@@ -45,6 +46,10 @@ final class PR_TIME_001_ExternalCallTimeoutRule implements RuleInterface
             if ($calls === []) {
                 continue;
             }
+            $timeoutOptionVars = array_map(
+                static fn (mixed $value): string => strtolower((string) $value),
+                is_array($scope['timeout_option_vars'] ?? null) ? $scope['timeout_option_vars'] : []
+            );
 
             usort($calls, static fn (array $a, array $b): int => ((int) ($a['start_line'] ?? 0)) <=> ((int) ($b['start_line'] ?? 0)));
 
@@ -72,6 +77,12 @@ final class PR_TIME_001_ExternalCallTimeoutRule implements RuleInterface
                 }
 
                 if ((bool) ($call['has_timeout_option'] ?? false) || (bool) ($call['has_connect_timeout_option'] ?? false)) {
+                    continue;
+                }
+                if ($this->hasSharedTimeoutVariable($call, $timeoutOptionVars)) {
+                    continue;
+                }
+                if ($this->isAllowedHttpTarget($collectorData, (string) ($call['target'] ?? ''))) {
                     continue;
                 }
 
@@ -154,5 +165,45 @@ final class PR_TIME_001_ExternalCallTimeoutRule implements RuleInterface
             evidence: [$evidence],
             fingerprint: Fingerprint::fromEvidence('PR-TIME-001', [$evidence]),
         );
+    }
+
+    /**
+     * @param array<string, mixed> $call
+     * @param array<int, string> $timeoutOptionVars
+     */
+    private function hasSharedTimeoutVariable(array $call, array $timeoutOptionVars): bool
+    {
+        $callVars = array_map(
+            static fn (mixed $value): string => strtolower((string) $value),
+            is_array($call['arg_variables'] ?? null) ? $call['arg_variables'] : []
+        );
+        foreach ($callVars as $name) {
+            if (in_array($name, $timeoutOptionVars, true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param array<string, mixed> $collectorData
+     */
+    private function isAllowedHttpTarget(array $collectorData, string $target): bool
+    {
+        $config = new Config(is_array($collectorData['config'] ?? null) ? $collectorData['config'] : []);
+        $allowedTargets = $config->stringList('PR-TIME-001', 'allow_http_targets', []);
+        $target = strtolower(trim($target));
+        if ($target === '') {
+            return false;
+        }
+
+        foreach ($allowedTargets as $allowed) {
+            if ($allowed !== '' && str_contains($target, $allowed)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

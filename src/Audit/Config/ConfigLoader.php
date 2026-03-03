@@ -6,6 +6,11 @@ namespace ProdAudit\Audit\Config;
 
 final class ConfigLoader
 {
+    public function loadConfig(string $path): Config
+    {
+        return new Config($this->load($path));
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -26,23 +31,6 @@ final class ConfigLoader
      */
     public function ignoredDirectories(array $config): array
     {
-        $ignored = $config['ignored_directories'] ?? [];
-        if (!is_array($ignored)) {
-            return [];
-        }
-
-        $result = [];
-        foreach ($ignored as $entry) {
-            if (!is_string($entry) || trim($entry) === '') {
-                continue;
-            }
-
-            $result[] = trim($entry);
-        }
-
-        $result = array_values(array_unique($result));
-        sort($result, SORT_STRING);
-
-        return $result;
+        return (new Config($config))->ignoredDirectories();
     }
 }

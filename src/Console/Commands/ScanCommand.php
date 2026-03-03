@@ -13,6 +13,7 @@ use ProdAudit\Audit\Plugins\PluginLoader;
 use ProdAudit\Audit\Policy\Policy;
 use ProdAudit\Audit\Policy\PolicyEvaluator;
 use ProdAudit\Audit\Profiles\ProfileRegistry;
+use ProdAudit\Audit\Quality\QualityEngine;
 use ProdAudit\Audit\Reporting\HistoryWriter;
 use ProdAudit\Audit\Reporting\JsonReportWriter;
 use ProdAudit\Audit\Reporting\MarkdownReportWriter;
@@ -45,6 +46,7 @@ final class ScanCommand extends Command
         private readonly HistoryWriter $historyWriter = new HistoryWriter(),
         private readonly SarifExporter $sarifExporter = new SarifExporter(),
         private readonly CheckstyleExporter $checkstyleExporter = new CheckstyleExporter(),
+        private readonly QualityEngine $qualityEngine = new QualityEngine(),
     ) {
         parent::__construct();
     }
@@ -69,7 +71,8 @@ final class ScanCommand extends Command
             ->addOption('export-include-suppressed', null, InputOption::VALUE_REQUIRED, 'Include suppressed/baseline findings in exports true|false', 'false')
             ->addOption('config', null, InputOption::VALUE_REQUIRED, 'Config file path', 'prod-audit.php')
             ->addOption('ignore-dir', null, InputOption::VALUE_REQUIRED | InputOption::VALUE_IS_ARRAY, 'Additional ignored directory')
-            ->addOption('fail-on-forecast-risk', null, InputOption::VALUE_REQUIRED, 'Optional threshold for forecast risk gate (0..1)');
+            ->addOption('fail-on-forecast-risk', null, InputOption::VALUE_REQUIRED, 'Optional threshold for forecast risk gate (0..1)')
+            ->addOption('max-noise-score', null, InputOption::VALUE_REQUIRED, 'Optional quality noise budget gate (0..1)');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -103,8 +106,8 @@ final class ScanCommand extends Command
             }
 
             $configPath = PathNormalizer::normalize((string) $input->getOption('config'));
-            $config = $this->configLoader->load($configPath);
-            $ignoredDirectories = $this->configLoader->ignoredDirectories($config);
+            $config = $this->configLoader->loadConfig($configPath);
+            $ignoredDirectories = $config->ignoredDirectories();
             $ignoredDirectories = $this->mergeIgnoredDirectories($ignoredDirectories, $input->getOption('ignore-dir'));
 
             $timestamp = gmdate('Ymd-His');
@@ -118,6 +121,7 @@ final class ScanCommand extends Command
                 $suppressionEntries,
                 false,
                 $ignoredDirectories,
+                $config,
             );
 
             $policy = $this->resolvePolicy($input);
@@ -126,6 +130,19 @@ final class ScanCommand extends Command
             $report['policy_result'] = $policyResult['pass'] ? 'pass' : 'fail';
             $report['policy_reasons'] = $policyResult['reasons'];
             $report['policy_recommended_actions'] = $policyResult['recommended_actions'];
+
+            $this->jsonReportWriter->write($outputDirectory, $report);
+            $qualityReport = $this->qualityEngine->generate(
+                historyPath: rtrim($outputDirectory, '/') . '/history.jsonl',
+                triagePath: rtrim($outputDirectory, '/') . '/triage.jsonl',
+                latestPath: rtrim($outputDirectory, '/') . '/latest.json',
+                ruleMetadataById: $this->ruleMetadataById(),
+                historyWindow: 20,
+            );
+            $report['quality'] = [
+                'overall_noise_score' => $qualityReport->overallNoiseScore,
+                'top_noisy_rules' => $qualityReport->topNoisyRules,
+            ];
 
             $this->markdownReportWriter->write($outputDirectory, $report, $timestamp);
             $this->jsonReportWriter->write($outputDirectory, $report);
@@ -161,7 +178,35 @@ final class ScanCommand extends Command
             $output->writeln(sprintf('Rules executed: %d', (int) ($report['scan_metrics']['rules_executed_count'] ?? 0)));
             $output->writeln(sprintf('Scan duration: %d ms', (int) ($report['scan_metrics']['scan_duration_ms'] ?? 0)));
             $output->writeln(sprintf('Policy: %s (%s)', (string) ($report['policy_name'] ?? 'default'), (string) ($report['policy_result'] ?? 'pass')));
+            $output->writeln(sprintf('Overall Noise Score: %.3f', (float) ($report['quality']['overall_noise_score'] ?? 0.0)));
             $output->writeln(sprintf('Report: %s/latest.md', $outputDirectory));
+
+            $forecastThreshold = $input->getOption('fail-on-forecast-risk');
+            if (is_scalar($forecastThreshold) && (string) $forecastThreshold !== '') {
+                $threshold = (float) (string) $forecastThreshold;
+                if ($threshold < 0.0 || $threshold > 1.0) {
+                    throw new RuntimeException('Option --fail-on-forecast-risk must be within 0..1.');
+                }
+
+                $riskInvariant = (float) ($report['forecast']['risk_new_invariant_fail'] ?? 0.0);
+                $riskDrop = (float) ($report['forecast']['risk_score_drop_5'] ?? 0.0);
+                if ($riskInvariant >= $threshold || $riskDrop >= $threshold) {
+                    return 8;
+                }
+            }
+
+            $noiseThreshold = $input->getOption('max-noise-score');
+            if (is_scalar($noiseThreshold) && (string) $noiseThreshold !== '') {
+                $threshold = (float) (string) $noiseThreshold;
+                if ($threshold < 0.0 || $threshold > 1.0) {
+                    throw new RuntimeException('Option --max-noise-score must be within 0..1.');
+                }
+
+                $overallNoise = (float) ($report['quality']['overall_noise_score'] ?? 0.0);
+                if ($overallNoise > $threshold) {
+                    return 9;
+                }
+            }
 
             if ((int) $report['invariant_failures'] > 0) {
                 return 2;
@@ -177,20 +222,6 @@ final class ScanCommand extends Command
 
             if (($report['policy_result'] ?? 'pass') === 'fail') {
                 return 6;
-            }
-
-            $forecastThreshold = $input->getOption('fail-on-forecast-risk');
-            if (is_scalar($forecastThreshold) && (string) $forecastThreshold !== '') {
-                $threshold = (float) (string) $forecastThreshold;
-                if ($threshold < 0.0 || $threshold > 1.0) {
-                    throw new RuntimeException('Option --fail-on-forecast-risk must be within 0..1.');
-                }
-
-                $riskInvariant = (float) ($report['forecast']['risk_new_invariant_fail'] ?? 0.0);
-                $riskDrop = (float) ($report['forecast']['risk_score_drop_5'] ?? 0.0);
-                if ($riskInvariant >= $threshold || $riskDrop >= $threshold) {
-                    return 8;
-                }
             }
 
             return 0;
@@ -282,5 +313,25 @@ final class ScanCommand extends Command
             '0', 'false', 'no', 'off', '' => false,
             default => throw new RuntimeException(sprintf('Invalid boolean value "%s".', $value)),
         };
+    }
+
+    /**
+     * @return array<string, \ProdAudit\Audit\Rules\RuleMetadata>
+     */
+    private function ruleMetadataById(): array
+    {
+        $metadata = [];
+        foreach ($this->ruleRegistry->ids() as $ruleId) {
+            $rule = $this->ruleRegistry->get($ruleId);
+            if ($rule === null) {
+                continue;
+            }
+
+            $metadata[$ruleId] = $rule->metadata();
+        }
+
+        ksort($metadata, SORT_STRING);
+
+        return $metadata;
     }
 }

@@ -1,0 +1,89 @@
+# Rule Quality Report
+
+- overall_noise_score: 0.000000
+
+## Top Noisy Rules
+- PR-BOUND-002 noise=0.000000 findings=1
+- PR-BOUND-003 noise=0.000000 findings=15
+- PR-BOUND-004 noise=0.000000 findings=1
+- PR-BOUND-005 noise=0.000000 findings=2
+- PR-BOUND-006 noise=0.000000 findings=1
+- PR-BOUND-007 noise=0.000000 findings=1
+- PR-BOUND-008 noise=0.000000 findings=0
+- PR-CONC-001 noise=0.000000 findings=1
+- PR-CONF-002 noise=0.000000 findings=0
+- PR-CONF-003 noise=0.000000 findings=0
+
+## Top Valuable Rules
+- PR-BOUND-002 value=0.500000 persistence=0.500000 noise=0.000000
+- PR-HANG-001 value=0.301587 persistence=0.301587 noise=0.000000
+- PR-BOUND-004 value=0.285714 persistence=0.285714 noise=0.000000
+- PR-BOUND-005 value=0.285714 persistence=0.285714 noise=0.000000
+- PR-BOUND-006 value=0.285714 persistence=0.285714 noise=0.000000
+- PR-BOUND-007 value=0.285714 persistence=0.285714 noise=0.000000
+- PR-CONC-001 value=0.285714 persistence=0.285714 noise=0.000000
+- PR-ERR-001 value=0.285714 persistence=0.285714 noise=0.000000
+- PR-ERR-006 value=0.285714 persistence=0.285714 noise=0.000000
+- PR-RETRY-001 value=0.285714 persistence=0.285714 noise=0.000000
+
+## Rule Metrics
+- PR-BOUND-002 noise=0.000000 precision=0.000000 persistence=0.500000 labeled=0 findings=1
+- PR-BOUND-003 noise=0.000000 precision=0.000000 persistence=0.185714 labeled=0 findings=15
+- PR-BOUND-004 noise=0.000000 precision=0.000000 persistence=0.285714 labeled=0 findings=1
+- PR-BOUND-005 noise=0.000000 precision=0.000000 persistence=0.285714 labeled=0 findings=2
+- PR-BOUND-006 noise=0.000000 precision=0.000000 persistence=0.285714 labeled=0 findings=1
+- PR-BOUND-007 noise=0.000000 precision=0.000000 persistence=0.285714 labeled=0 findings=1
+- PR-BOUND-008 noise=0.000000 precision=0.000000 persistence=0.000000 labeled=0 findings=0
+- PR-CONC-001 noise=0.000000 precision=0.000000 persistence=0.285714 labeled=0 findings=1
+- PR-CONF-002 noise=0.000000 precision=0.000000 persistence=0.000000 labeled=0 findings=0
+- PR-CONF-003 noise=0.000000 precision=0.000000 persistence=0.000000 labeled=0 findings=0
+- PR-CONF-004 noise=0.000000 precision=0.000000 persistence=0.000000 labeled=0 findings=0
+- PR-CONF-005 noise=0.000000 precision=0.000000 persistence=0.000000 labeled=0 findings=0
+- PR-CONF-006 noise=0.000000 precision=0.000000 persistence=0.000000 labeled=0 findings=0
+- PR-CONF-007 noise=0.000000 precision=0.000000 persistence=0.000000 labeled=0 findings=0
+- PR-DEP-001 noise=0.000000 precision=0.000000 persistence=0.000000 labeled=0 findings=0
+- PR-DEP-002 noise=0.000000 precision=0.000000 persistence=0.000000 labeled=0 findings=0
+- PR-DEP-003 noise=0.000000 precision=0.000000 persistence=0.000000 labeled=0 findings=0
+- PR-DEP-004 noise=0.000000 precision=0.000000 persistence=0.000000 labeled=0 findings=0
+- PR-DEP-005 noise=0.000000 precision=0.000000 persistence=0.000000 labeled=0 findings=0
+- PR-DOC-001 noise=0.000000 precision=0.000000 persistence=0.000000 labeled=0 findings=0
+- PR-DOC-002 noise=0.000000 precision=0.000000 persistence=0.000000 labeled=0 findings=0
+- PR-DOC-003 noise=0.000000 precision=0.000000 persistence=0.000000 labeled=0 findings=0
+- PR-DOC-004 noise=0.000000 precision=0.000000 persistence=0.000000 labeled=0 findings=0
+- PR-DOC-005 noise=0.000000 precision=0.000000 persistence=0.000000 labeled=0 findings=0
+- PR-ERR-001 noise=0.000000 precision=0.000000 persistence=0.285714 labeled=0 findings=7
+- PR-ERR-002 noise=0.000000 precision=0.000000 persistence=0.178571 labeled=0 findings=2
+- PR-ERR-003 noise=0.000000 precision=0.000000 persistence=0.000000 labeled=0 findings=0
+- PR-ERR-004 noise=0.000000 precision=0.000000 persistence=0.214286 labeled=0 findings=3
+- PR-ERR-005 noise=0.000000 precision=0.000000 persistence=0.000000 labeled=0 findings=0
+- PR-ERR-006 noise=0.000000 precision=0.000000 persistence=0.285714 labeled=0 findings=1
+- PR-ERR-007 noise=0.000000 precision=0.000000 persistence=0.000000 labeled=0 findings=0
+- PR-HANG-001 noise=0.000000 precision=1.000000 persistence=0.301587 labeled=1 findings=7
+- PR-LOCK-001 noise=0.000000 precision=0.000000 persistence=0.214286 labeled=0 findings=5
+- PR-LOCK-002 noise=0.000000 precision=0.000000 persistence=0.252747 labeled=0 findings=13
+- PR-LOCK-003 noise=0.000000 precision=0.000000 persistence=0.000000 labeled=0 findings=0
+- PR-OBS-001 noise=0.000000 precision=0.000000 persistence=0.242857 labeled=0 findings=5
+- PR-OBS-002 noise=0.000000 precision=0.000000 persistence=0.239796 labeled=0 findings=14
+- PR-OBS-003 noise=0.000000 precision=0.000000 persistence=0.214286 labeled=0 findings=9
+- PR-OBS-004 noise=0.000000 precision=0.000000 persistence=0.232143 labeled=0 findings=8
+- PR-OBS-005 noise=0.000000 precision=0.000000 persistence=0.221429 labeled=0 findings=10
+- PR-OBS-006 noise=0.000000 precision=0.000000 persistence=0.000000 labeled=0 findings=0
+- PR-OBS-007 noise=0.000000 precision=0.000000 persistence=0.000000 labeled=0 findings=0
+- PR-RETRY-001 noise=0.000000 precision=0.000000 persistence=0.285714 labeled=0 findings=1
+- PR-RETRY-002 noise=0.000000 precision=0.000000 persistence=0.285714 labeled=0 findings=1
+- PR-RETRY-003 noise=0.000000 precision=0.000000 persistence=0.285714 labeled=0 findings=4
+- PR-SEC-001 noise=0.000000 precision=0.000000 persistence=0.000000 labeled=0 findings=0
+- PR-SEC-002 noise=0.000000 precision=0.000000 persistence=0.000000 labeled=0 findings=0
+- PR-SEC-003 noise=0.000000 precision=0.000000 persistence=0.000000 labeled=0 findings=0
+- PR-SEC-004 noise=0.000000 precision=0.000000 persistence=0.000000 labeled=0 findings=0
+- PR-SEC-005 noise=0.000000 precision=0.000000 persistence=0.000000 labeled=0 findings=0
+- PR-SHUTDOWN-001 noise=0.000000 precision=0.000000 persistence=0.000000 labeled=0 findings=0
+- PR-SHUTDOWN-002 noise=0.000000 precision=0.000000 persistence=0.000000 labeled=0 findings=0
+- PR-STATE-001 noise=0.000000 precision=0.000000 persistence=0.000000 labeled=0 findings=0
+- PR-STATE-002 noise=0.000000 precision=0.000000 persistence=0.000000 labeled=0 findings=0
+- PR-TIME-001 noise=0.000000 precision=0.000000 persistence=0.214286 labeled=0 findings=3
+- PR-TIME-002 noise=0.000000 precision=0.000000 persistence=0.285714 labeled=0 findings=3
+- PR-TIME-003 noise=0.000000 precision=0.000000 persistence=0.207792 labeled=0 findings=11
+- PR-TIME-004 noise=0.000000 precision=0.000000 persistence=0.000000 labeled=0 findings=0
+- PR-TIME-005 noise=0.000000 precision=0.000000 persistence=0.285714 labeled=0 findings=1
+- PR-TIME-006 noise=0.000000 precision=0.000000 persistence=0.214286 labeled=0 findings=3
